@@ -1,8 +1,23 @@
+import { useEffect } from "react";
 import { useSettingsStore } from "../store/settingsStore";
+import { useWindowManagerStore } from "../store/windowManagerStore";
 
-export const AnimationPreview = () => {
+export const AnimationPreview = ({ data }: { data?: any }) => {
   const { tweaks } = useSettingsStore();
 
+  useEffect(() => {
+    console.log("AnimationPreview render edildi");
+    console.log("Data:", data);
+  }, [data]);
+
+  // Eğer data.content varsa (SettingsPanel'den gelen) o içeriği göster
+  if (data?.content) {
+    console.log("Özel içerik render ediliyor:", data.content);
+    return data.content;
+  }
+
+  console.log("Varsayılan içerik render ediliyor");
+  // Varsayılan görünüm (eski stil)
   return (
     <div className="h-full w-full flex flex-col items-center justify-center p-6 text-center">
       <h2 className="text-xl font-semibold mb-4">Animasyon Önizlemesi</h2>

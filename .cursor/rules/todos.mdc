@@ -8,15 +8,18 @@ Uygulamanın çalışması için yapılması gereken güncellemeleri içeren mar
 
 # Kullanım klavuzu
 [x] ile başlayan satırlar bitmiş todoları,
-[ ] ile başlayan satırlar henüz başlanmamış satırları belirtiyor.
+[x] ile başlayan satırlar henüz başlanmamış satırları belirtiyor.
 
 # Todo List
 
 ## Window Manager
-[ ] [Window.tsx](mdc:src/components/Window.tsx) yeniden boyutlandırma işlemi şuan sadece sağ alt'dan çalışyıor, pencerenin sol üst, sağ üst, sağ alt, sol alt'dan da yeniden boyutlandırılabilir olmalı.
-
+[x] [Window.tsx](mdc:src/components/Window.tsx) yeniden boyutlandırma işlemi şuan sadece sağ alt'dan çalışyıor, pencerenin sol üst, sağ üst, sağ alt, sol alt'dan da yeniden boyutlandırılabilir olmalı.
+[x] [Window.tsx](mdc:src/components/Window.tsx) Window'ların her birine bir zIndex değeri tutulmalı, kaç tane açık pencere varsa ona göre diğer pencerelerin de en son aktif olan pencere en üstte olacak şekilde sıralanması gerekiyor.
+[x] [Window.tsx](mdc:src/components/Window.tsx) Jellyfish animasyonu eklenmeli.
+[ ] [Window.tsx](mdc:src/components/Window.tsx) Pencere kapanırken animasyon oynamıyor, pencere kapanmasında'da animasyon olmalı
 ## Settings App
-[ ] [SettingsPanel.tsx](mdc:src/components/SettingsPanel.tsx) sayfadaki shadcn select bileşeni yerine düz html selecti kullanılmalı.
+[x] [SettingsPanel.tsx](mdc:src/components/SettingsPanel.tsx) sayfadaki düz html bileşeni yerine shadcn select selecti kullanılmalı.
+[x] [SettingsPanel.tsx](mdc:src/components/SettingsPanel.tsx) Animasyon önizlemesi, animasyonu test et butonu çalışmıyor, çalışır olmalı.
 
 ## Dash To Dock
-[ ] [DashToDock.tsx](mdc:src/components/DashToDock.tsx) burada icon kullanma yöntemi değişmeli, /icons/${iconPack}/terminal.svg iconlar bu şekilde değil, bir sayfada, bir array içerisinde key'i icon paketi ismi olan, içerisinde uygulama iconlarına karşılık gelen tüm yollar olan bir yapıda olmalı.
+[x] [DashToDock.tsx](mdc:src/components/DashToDock.tsx) burada icon kullanma yöntemi değişmeli, /icons/${iconPack}/terminal.svg iconlar bu şekilde değil, bir sayfada, bir array içerisinde key'i icon paketi ismi olan, içerisinde uygulama iconlarına karşılık gelen tüm yollar olan bir yapıda olmalı.

@@ -374,6 +374,9 @@ function App() {
   ]);
 
   const renderWindowContent = (window: any) => {
+    console.log("Pencere içeriği render ediliyor:", window.type, window.id);
+
+    // Diğer tip pencereleri normal şekilde render et
     switch (window.type) {
       case "terminal":
         return <Terminal />;
@@ -386,7 +389,7 @@ function App() {
       case "settings":
         return <SettingsPanel />;
       case "animation-preview":
-        return <AnimationPreview />;
+        return <AnimationPreview data={window.data} />;
       default:
         return null;
     }
@@ -406,18 +409,22 @@ function App() {
       <Topbar />
       <div className="flex-1 relative">
         <Desktop />
-        {windows.map((window) => (
-          <Window
-            key={window.id}
-            id={window.id}
-            title={window.title}
-            initialPosition={window.position}
-            initialSize={window.size}
-            headerLeft={renderHeaderLeft(window)}
-          >
-            {renderWindowContent(window)}
-          </Window>
-        ))}
+        {windows.map((window) => {
+          console.log("Window render:", window.id, window.type);
+          return (
+            <Window
+              key={window.id}
+              id={window.id}
+              title={window.title}
+              initialPosition={window.position}
+              initialSize={window.size}
+              headerLeft={renderHeaderLeft(window)}
+              content={window.data?.content}
+            >
+              {renderWindowContent(window)}
+            </Window>
+          );
+        })}
         {/* Ekran Bölücü */}
         <Splitter />
       </div>

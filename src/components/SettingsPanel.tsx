@@ -23,7 +23,14 @@ import { v4 as uuidv4 } from "uuid";
 import { getIconPath } from "../icons/iconPaths";
 
 // AnimationType tipini import ediyorum
-type AnimationType = "fade" | "scale" | "slide" | "flip" | "rotate" | "none";
+type AnimationType =
+  | "fade"
+  | "scale"
+  | "slide"
+  | "flip"
+  | "rotate"
+  | "none"
+  | "jellyfish";
 
 export const SettingsPanel = () => {
   const {
@@ -62,6 +69,7 @@ export const SettingsPanel = () => {
     { id: "slide", label: "Kaydırma" },
     { id: "flip", label: "Çevirme" },
     { id: "rotate", label: "Döndürme" },
+    { id: "jellyfish", label: "Jellyfish" },
   ];
 
   // Sidebar menü öğeleri
@@ -126,21 +134,35 @@ export const SettingsPanel = () => {
 
       <div className="mb-4">
         <h3 className="text-md font-medium mb-2">Dil</h3>
-        <select
+        <Select
           value={system.language}
-          onChange={(e) => setLanguage(e.target.value)}
-          className="w-full p-2 rounded-md border border-input bg-background text-sm"
+          onValueChange={(value) => setLanguage(value)}
         >
-          <option value="en">English</option>
-          <option value="tr">Türkçe</option>
-        </select>
+          <SelectTrigger className="w-full">
+            <SelectValue placeholder="Dil Seçin" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="en">English</SelectItem>
+            <SelectItem value="tr">Türkçe</SelectItem>
+          </SelectContent>
+        </Select>
       </div>
 
       <div>
         <h3 className="text-md font-medium mb-2">Saat Formatı</h3>
         <div className="flex space-x-2">
-          <Button onClick={() => setTimeFormat("12h")}>12 Saat</Button>
-          <Button onClick={() => setTimeFormat("24h")}>24 Saat</Button>
+          <Button
+            variant={system.timeFormat === "12h" ? "default" : "outline"}
+            onClick={() => setTimeFormat("12h")}
+          >
+            12 Saat
+          </Button>
+          <Button
+            variant={system.timeFormat === "24h" ? "default" : "outline"}
+            onClick={() => setTimeFormat("24h")}
+          >
+            24 Saat
+          </Button>
         </div>
       </div>
     </div>
@@ -153,17 +175,21 @@ export const SettingsPanel = () => {
 
       <div className="mb-8">
         <h3 className="text-md font-medium mb-2">İkon Paketi</h3>
-        <select
+        <Select
           value={tweaks.iconPack}
-          onChange={(e) => setIconPack(e.target.value)}
-          className="w-full p-2 rounded-md border border-input bg-background text-sm"
+          onValueChange={(value) => setIconPack(value)}
         >
-          {iconPacks.map((pack) => (
-            <option key={pack.id} value={pack.id}>
-              {pack.label}
-            </option>
-          ))}
-        </select>
+          <SelectTrigger className="w-full">
+            <SelectValue placeholder="İkon Paketi Seçin" />
+          </SelectTrigger>
+          <SelectContent>
+            {iconPacks.map((pack) => (
+              <SelectItem key={pack.id} value={pack.id}>
+                {pack.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
 
         <div className="mt-4">
           <h4 className="text-sm font-medium mb-2">Önizleme</h4>
@@ -206,20 +232,23 @@ export const SettingsPanel = () => {
 
       <div className="mb-4">
         <h3 className="text-md font-medium mb-2">Pencere Animasyonları</h3>
-        <select
+        <Select
           value={tweaks.windowAnimation}
-          onChange={(e) => {
-            console.log("Seçilen animasyon:", e.target.value);
-            setWindowAnimation(e.target.value as WindowAnimationType);
-          }}
-          className="w-full p-2 rounded-md border border-input bg-background text-sm"
+          onValueChange={(value) =>
+            setWindowAnimation(value as WindowAnimationType)
+          }
         >
-          {windowAnimations.map((animation) => (
-            <option key={animation.id} value={animation.id}>
-              {animation.label}
-            </option>
-          ))}
-        </select>
+          <SelectTrigger className="w-full">
+            <SelectValue placeholder="Animasyon Seçin" />
+          </SelectTrigger>
+          <SelectContent>
+            {windowAnimations.map((animation) => (
+              <SelectItem key={animation.id} value={animation.id}>
+                {animation.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
 
         <div className="bg-card p-4 rounded-md mt-4">
           <h4 className="text-sm font-medium mb-2">Animasyon Önizlemesi</h4>
@@ -231,30 +260,61 @@ export const SettingsPanel = () => {
           <div className="flex justify-center">
             <Button
               variant="outline"
-              onClick={() => {
+              onClick={(e: any) => {
+                e.preventDefault();
+                e.stopPropagation();
+                // Debug mesajı
+                console.log("Animasyon test butonuna tıklandı");
+
                 // Animasyon önizlemesi için bir pencere açılabilir
                 const size = { width: 400, height: 300 };
-                const position = calculateCascadingPosition(
+                const position = calculateCenterPosition(
                   size.width,
                   size.height
                 );
 
-                const id = uuidv4();
-                addWindow({
-                  id,
-                  title: "Animasyon Önizlemesi",
-                  type: "animation-preview",
-                  position,
-                  size,
-                  isMinimized: false,
-                  isMaximized: false,
-                  zIndex: 1,
-                });
+                console.log("Hesaplanan pozisyon:", position);
 
-                // 2 saniye sonra otomatik kapat
+                const id = uuidv4();
+                console.log("Oluşturulan pencere ID:", id);
+                try {
+                  // Daha basit bir içerik oluştur
+                  const customContent = (
+                    <div className="h-full w-full flex items-center justify-center">
+                      <div className="text-center max-w-md bg-background p-6 rounded-lg shadow-lg">
+                        <h2 className="text-xl font-bold mb-4">
+                          {tweaks.windowAnimation} Animasyonu
+                        </h2>
+                        <p className="mb-2">
+                          Bu pencere önizleme için oluşturuldu ve 3 saniye
+                          içinde kapanacak.
+                        </p>
+                      </div>
+                    </div>
+                  );
+
+                  addWindow({
+                    id,
+                    title: "Animasyon Önizlemesi",
+                    type: "animation-preview",
+                    position,
+                    size,
+                    isMinimized: false,
+                    isMaximized: false,
+                    zIndex: 1,
+                    data: {
+                      content: customContent,
+                    },
+                  });
+                  console.log("Pencere başarıyla eklendi");
+                } catch (error) {
+                  console.error("Pencere eklenirken hata:", error);
+                }
+
                 setTimeout(() => {
+                  console.log("Pencere kapatılıyor, ID:", id);
                   removeWindow(id);
-                }, 2000);
+                }, 3000);
               }}
             >
               Animasyonu Test Et

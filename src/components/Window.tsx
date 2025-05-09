@@ -12,6 +12,7 @@ interface WindowProps {
   initialPosition?: { x: number; y: number };
   initialSize?: { width: number; height: number };
   headerLeft?: React.ReactNode;
+  content?: React.ReactNode;
 }
 
 // Farklı animasyon türleri için varyantlar
@@ -46,6 +47,29 @@ const animationVariants = {
     exit: { opacity: 0, rotate: 2 },
     transition: { duration: 0.3 },
   },
+  jellyfish: {
+    initial: { opacity: 0, scale: 0.7 },
+    animate: {
+      opacity: 1,
+      scale: 1,
+      transition: {
+        duration: 0.4,
+        type: "spring",
+        stiffness: 300,
+        damping: 15,
+      },
+    },
+    exit: {
+      opacity: 0,
+      scale: 0.8,
+      y: 10,
+      transition: {
+        duration: 0.3,
+        ease: "easeInOut",
+      },
+    },
+    transition: { duration: 0.4 },
+  },
   none: {
     initial: {},
     animate: {},
@@ -61,6 +85,7 @@ export const Window = ({
   initialPosition = { x: 100, y: 100 },
   initialSize = { width: 800, height: 600 },
   headerLeft,
+  content,
 }: WindowProps) => {
   const {
     updateWindow,
@@ -69,6 +94,7 @@ export const Window = ({
     setActiveWindow,
     bringToFront,
     endSplitOnDrag,
+    windows,
   } = useWindowManagerStore();
 
   const { tweaks } = useSettingsStore();
@@ -82,6 +108,8 @@ export const Window = ({
 
   const [position, setPosition] = useState(initialPosition);
   const [size, setSize] = useState(initialSize);
+  // Pencere kapanma durumu
+  const [isClosing, setIsClosing] = useState(false);
 
   // Drag state refs
   const isDragging = useRef(false);
@@ -100,6 +128,10 @@ export const Window = ({
   // Animation frame Id for cleanup
   const animationFrameId = useRef<number | null>(null);
 
+  // Şu anki pencerenin zIndex'ini al
+  const currentWindow = windows.find((w) => w.id === id);
+  const zIndex = currentWindow?.zIndex || 1;
+
   // Pencere pozisyonunu ekran sınırları içinde tutma
   const clampPositionToScreen = (x: number, y: number) => {
     const windowWidth = window.innerWidth;
@@ -114,8 +146,20 @@ export const Window = ({
 
   // Mevcut animasyon varyantlarını al
   const getAnimationVariant = () => {
-    debugger;
     return animationVariants[selectedAnimation] || animationVariants.fade;
+  };
+
+  // Pencere aktifleştirme ve öne getirme işlemi - sadece window header veya kenarlarında
+  const handleWindowActivation = (e: React.MouseEvent) => {
+    // İçerik alanına tıklamayı ignore et, böylece içerik alanı normal şekilde çalışır
+    const contentArea = e.currentTarget.querySelector(".window-content");
+    if (contentArea?.contains(e.target as Node)) {
+      return;
+    }
+
+    // Window header veya kenarlarına tıklandığında aktifleştir
+    setActiveWindow(id);
+    bringToFront(id);
   };
 
   // Component mount/unmount event listeners
@@ -215,30 +259,25 @@ export const Window = ({
     };
 
     const handleMouseUp = (e: MouseEvent) => {
+      if (!isDragging.current && !isResizing.current) return;
+
+      e.preventDefault();
+
       if (isDragging.current) {
         isDragging.current = false;
+        document.body.style.cursor = "";
+
+        // Pencere pozisyonunu store'a kaydet
         updateWindow(id, { position });
-        document.body.style.cursor = "auto";
-      }
-
-      if (isResizing.current) {
+      } else if (isResizing.current) {
         isResizing.current = false;
-        updateWindow(id, { size });
-        document.body.style.cursor = "auto";
-      }
+        document.body.style.cursor = "";
 
-      // Animasyon frame'i temizle
-      if (animationFrameId.current !== null) {
-        cancelAnimationFrame(animationFrameId.current);
-        animationFrameId.current = null;
+        // Pencere boyutunu store'a kaydet
+        updateWindow(id, { size });
       }
     };
 
-    // Global event listeners ekleme
-    window.addEventListener("mousemove", handleMouseMove);
-    window.addEventListener("mouseup", handleMouseUp);
-
-    // Pencere boyutu değiştiğinde sınırları kontrol et ve uyum sağla
     const handleResize = () => {
       const { x, y } = clampPositionToScreen(position.x, position.y);
       if (x !== position.x || y !== position.y) {
@@ -246,6 +285,8 @@ export const Window = ({
       }
     };
 
+    window.addEventListener("mousemove", handleMouseMove);
+    window.addEventListener("mouseup", handleMouseUp);
     window.addEventListener("resize", handleResize);
 
     // Cleanup
@@ -341,15 +382,14 @@ export const Window = ({
     document.body.style.cursor = cursorType;
   };
 
-  // Prevent text selection while dragging
-  const preventSelection = (e: React.SyntheticEvent) => {
-    if (isDragging.current || isResizing.current) {
-      e.preventDefault();
-    }
-  };
-
   // Animasyon varyantını al
   const variant = getAnimationVariant();
+
+  // Pencere kapatma işlemi
+  const handleClose = () => {
+    // Önce kapanma durumunu ayarla, böylece çıkış animasyonu oynatılır
+    setIsClosing(true);
+  };
 
   return (
     <AnimatePresence mode="wait">
@@ -367,17 +407,22 @@ export const Window = ({
               ? "0 25px 50px -12px rgba(0, 0, 0, 0.25)"
               : "0 10px 15px -3px rgba(0, 0, 0, 0.1)",
           transformOrigin: "top center",
+          zIndex: zIndex,
         }}
         className={`rounded-lg overflow-hidden flex flex-col border ${
           activeWindowId === id ? "border-primary" : "border-border"
         } bg-card text-card-foreground`}
-        onClick={() => setActiveWindow(id)}
-        onMouseDown={() => bringToFront(id)}
+        onClick={handleWindowActivation}
         // Animation properties
         initial={variant.initial}
-        animate={variant.animate}
+        animate={isClosing ? variant.exit : variant.animate}
         exit={variant.exit}
         transition={variant.transition}
+        onAnimationComplete={() => {
+          if (isClosing) {
+            removeWindow(id);
+          }
+        }}
       >
         {/* Header */}
         <div
@@ -391,7 +436,7 @@ export const Window = ({
           </div>
           <div className="flex">
             <Button
-              onClick={() => removeWindow(id)}
+              onClick={handleClose}
               size="icon"
               variant="ghost"
               className="h-6 w-6 rounded-full hover:bg-destructive hover:text-destructive-foreground"
@@ -415,11 +460,8 @@ export const Window = ({
         </div>
 
         {/* Content */}
-        <div
-          onMouseDown={preventSelection}
-          className="flex-1 overflow-auto p-1"
-        >
-          {children}
+        <div className="flex-1 overflow-auto p-1 window-content">
+          {content || children}
         </div>
 
         {/* Resizers - Tüm köşeler için resize handle ekle */}

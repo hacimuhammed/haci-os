@@ -16,6 +16,7 @@ export type WindowAnimationType =
   | "slide"
   | "flip"
   | "rotate"
+  | "jellyfish"
   | "none";
 
 interface TweaksSettings {

@@ -4,7 +4,7 @@ type IconName =
   | "file-manager"
   | "text-editor"
   | "preferences-system";
-type IconPackName = "whitesur-light";
+type IconPackName = "whitesur-light" | "reversal-dark";
 type IconPack = Record<IconName, string>;
 type IconPathsType = Record<IconPackName, IconPack>;
 
@@ -16,7 +16,12 @@ export const iconPaths: IconPathsType = {
     "text-editor": "/icons/whitesur-light/text-editor.svg",
     "preferences-system": "/icons/whitesur-light/preferences-system.svg",
   },
-  // Burada diğer icon paketleri eklenebilir
+  "reversal-dark": {
+    terminal: "/icons/reversal-dark/terminal.svg",
+    "file-manager": "/icons/reversal-dark/file-manager.svg",
+    "text-editor": "/icons/reversal-dark/text-editor.svg",
+    "preferences-system": "/icons/reversal-dark/preferences-system.svg",
+  },
 };
 
 // Belirli bir icon paketinden belirli bir ikonu almak için yardımcı fonksiyon

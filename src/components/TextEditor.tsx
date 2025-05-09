@@ -379,56 +379,6 @@ export const TextEditor = ({ initialFileId }: TextEditorProps) => {
     </div>
   );
 
-  // Toolbar bileşeni
-  const Toolbar = () => (
-    <div className="bg-card border-t border-b border-border py-1 px-4 flex items-center space-x-2">
-      <Button
-        variant="default"
-        size="sm"
-        className="px-3 py-1"
-        onClick={() => activeTabId && saveFile(activeTabId)}
-        disabled={!activeTabId}
-      >
-        Kaydet
-      </Button>
-      <Button
-        variant="secondary"
-        size="sm"
-        className="px-3 py-1"
-        onClick={() => {
-          // FileManager penceresini aç
-          const size = { width: 600, height: 500 };
-          const position = calculateCascadingPosition(size.width, size.height);
-
-          // Pencereyi biraz yukarıda oluşturmak için y pozisyonunu ayarla
-          position.y = Math.max(50, position.y - 150);
-
-          addWindow({
-            id: uuidv4(),
-            title: "Dosya Aç",
-            type: "file-manager",
-            position,
-            size,
-            isMinimized: false,
-            isMaximized: false,
-            zIndex: 100,
-            mode: "open",
-            data: {
-              onOpen: (fileId: string) => {
-                const file = files.find((f) => f.id === fileId);
-                if (file) {
-                  loadFileToNewTab(file.id);
-                }
-              },
-            },
-          });
-        }}
-      >
-        Aç
-      </Button>
-    </div>
-  );
-
   // Kaydetme modalı
   const SaveModal = () => (
     <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
@@ -510,7 +460,6 @@ export const TextEditor = ({ initialFileId }: TextEditorProps) => {
   return (
     <div className="h-full flex flex-col bg-background text-foreground font-mono overflow-hidden">
       <TabHeader />
-      <Toolbar />
 
       {activeTab ? (
         <textarea
