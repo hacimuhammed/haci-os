@@ -30,7 +30,7 @@ export const Topbar = () => {
   };
 
   return (
-    <div className="bg-background h-14 py-3 bg-opacity-90 backdrop-blur-sm flex items-center justify-between px-4 relative">
+    <div className="bg-background h-10 py-3 bg-opacity-90 backdrop-blur-sm flex items-center justify-between px-4 relative z-50">
       <div>{/* Logo veya başlangıç menüsü burada olabilir */}</div>
 
       <div className="flex items-center space-x-4">

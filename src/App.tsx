@@ -415,11 +415,10 @@ function App() {
       }`}
     >
       <div className="bg-background text-foreground relative flex-1 overflow-hidden">
-        {/* Desktop */}
-        <Desktop />
-
         {/* Topbar */}
         <Topbar />
+        {/* Desktop */}
+        <Desktop />
 
         {/* Pencereler */}
         <AnimatePresence>
@@ -432,6 +431,7 @@ function App() {
               initialSize={window.size}
               headerLeft={renderHeaderLeft(window)}
               content={renderWindowContent(window)}
+              children={renderWindowContent(window)}
             />
           ))}
         </AnimatePresence>

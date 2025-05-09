@@ -49,7 +49,10 @@ export const SettingsPanel = () => {
   ];
 
   // Kullanılabilir ikon paketleri
-  const iconPacks = [{ id: "whitesur-light", label: "WhiteSur Light" }];
+  const iconPacks = [
+    { id: "whitesur-light", label: "WhiteSur Light" },
+    { id: "reversal-dark", label: "Reversal Light" },
+  ];
 
   // Kullanılabilir pencere animasyonları
   const windowAnimations = [
