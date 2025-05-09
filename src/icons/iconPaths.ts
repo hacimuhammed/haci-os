@@ -3,7 +3,8 @@ type IconName =
   | "terminal"
   | "file-manager"
   | "text-editor"
-  | "preferences-system";
+  | "preferences-system"
+  | "product-manager";
 type IconPackName = "whitesur-light" | "reversal-dark";
 type IconPack = Record<IconName, string>;
 type IconPathsType = Record<IconPackName, IconPack>;
@@ -15,12 +16,14 @@ export const iconPaths: IconPathsType = {
     "file-manager": "/icons/whitesur-light/file-manager.svg",
     "text-editor": "/icons/whitesur-light/text-editor.svg",
     "preferences-system": "/icons/whitesur-light/preferences-system.svg",
+    "product-manager": "/icons/whitesur-light/web-browser.svg",
   },
   "reversal-dark": {
     terminal: "/icons/reversal-dark/terminal.svg",
     "file-manager": "/icons/reversal-dark/file-manager.svg",
     "text-editor": "/icons/reversal-dark/text-editor.svg",
     "preferences-system": "/icons/reversal-dark/preferences-system.svg",
+    "product-manager": "/icons/reversal-dark/web-browser-symbolic.svg",
   },
 };
 

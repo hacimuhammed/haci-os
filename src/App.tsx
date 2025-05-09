@@ -11,6 +11,7 @@ import { Desktop } from "./components/Desktop";
 import { FileManager } from "./components/apps/FileManager";
 import { GDM } from "./components/GDM";
 import { Nano } from "./components/apps/Nano";
+import { ProductManager } from "./components/apps/ProductManager";
 import { SettingsPanel } from "./components/apps/SettingsPanel";
 import { SystemContextMenu } from "./components/SystemContextMenu";
 import { Terminal } from "./components/apps/Terminal";
@@ -403,6 +404,8 @@ function App() {
         return <SettingsPanel />;
       case "animation-preview":
         return <AnimationPreview data={window.data} />;
+      case "product-manager":
+        return <ProductManager productId={window.productId} />;
       default:
         return null;
     }

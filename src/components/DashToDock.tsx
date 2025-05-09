@@ -98,6 +98,22 @@ export const DashToDock = () => {
     });
   };
 
+  const handleProductManagerClick = () => {
+    const size = { width: 1000, height: 700 };
+    const position = calculateCascadingPosition(size.width, size.height);
+
+    addWindow({
+      id: uuidv4(),
+      title: "Product Manager",
+      type: "product-manager",
+      position,
+      size,
+      isMinimized: false,
+      isMaximized: false,
+      zIndex: 1,
+    });
+  };
+
   return (
     <div className="bg-accent/30 fixed bottom-4 left-1/2 transform -translate-x-1/2 bg-opacity-80 backdrop-blur-md rounded-full px-6 py-3 flex items-center space-x-6">
       <DockButton
@@ -119,6 +135,11 @@ export const DashToDock = () => {
         onClick={handleSettingsClick}
         iconName="preferences-system"
         title="Settings"
+      />
+      <DockButton
+        onClick={handleProductManagerClick}
+        iconName="product-manager"
+        title="Product Manager"
       />
     </div>
   );

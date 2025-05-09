@@ -34,6 +34,7 @@ interface Window {
   mode?: "open" | "save"; // Dosya açma/kaydetme modu
   data?: any; // Pencere ile ilgili ek veri
   snapPosition?: "left" | "right" | "none"; // Pencere konumlandırma
+  productId?: string; // Ürün uygulaması için ürün kimliği
 }
 
 interface WindowManagerState {

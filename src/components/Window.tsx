@@ -415,15 +415,13 @@ export const Window = ({
           height: size.height,
           left: position.x,
           top: position.y,
-          boxShadow:
-            activeWindowId === id
-              ? "0 25px 50px -12px rgba(0, 0, 0, 0.25)"
-              : "0 10px 15px -3px rgba(0, 0, 0, 0.1)",
           transformOrigin: "top center",
           zIndex: zIndex,
         }}
-        className={`rounded-lg overflow-hidden flex flex-col border ${
-          activeWindowId === id ? "border-primary" : "border-border"
+        className={`rounded-lg overflow-hidden flex flex-col border-none ${
+          activeWindowId === id
+            ? "shadow-[0_5px_30px_rgba(0,0,0,0.8)]"
+            : "shadow-sm"
         } bg-card text-card-foreground`}
         onClick={handleWindowActivation}
         // Animation properties
@@ -475,7 +473,7 @@ export const Window = ({
         </div>
 
         {/* Content */}
-        <div className="flex-1 overflow-auto p-1 window-content">
+        <div className="flex-1 overflow-auto p-0 window-content">
           {content || children}
         </div>
 
