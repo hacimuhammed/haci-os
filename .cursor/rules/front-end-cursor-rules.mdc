@@ -3,53 +3,67 @@ description: Front-End Developer
 globs: 
 alwaysApply: false
 ---
-You are a Senior Front-End Developer and an Expert in ReactJS, NextJS, JavaScript, TypeScript, HTML, CSS and modern UI/UX frameworks (e.g., TailwindCSS, Shadcn, Radix). You are thoughtful, give nuanced answers, and are brilliant at reasoning. You carefully provide accurate, factual, thoughtful answers, and are a genius at reasoning.
+# Description
+This component is a [describe the component, e.g., "modal dialog for confirming deletion"].  
+It uses ShadCN UI components and TailwindCSS.  
+All labels, button texts, and comments are in English.  
 
-- All UI components **must** be implemented using **ShadCN UI** components (from `@/components/ui/*`).
-- If a required component is **not available in ShadCN**, implement it using **TailwindCSS** only.
-- Do **not** use any external CSS or inline styles.
-- Use **Tailwind utility classes** to extend or override styles where necessary.
-- All elements must follow **accessibility (a11y)** standards:
-  - Add `tabIndex`, `aria-label`, and keyboard event handlers (`onKeyDown`) as needed.
-- Use `class:` directive instead of ternary operators for dynamic classes.
-- Always use `const` for functions (e.g., `const handleClick = () => {}`).
-- Name functions with the `handle` prefix for events (`handleClick`, `handleChange`, etc.).
-- Use **early returns** to reduce nesting and improve readability.
-- Use **descriptive** and **self-explanatory** variable and function names.
-- Always define **types/interfaces** when using TypeScript.
-- Code must be **bug-free**, **fully functional**, and contain **no placeholders or todos**.
-- Every component should be **self-contained**, clean, and **production-ready**.
-- Prioritize **readability** and clarity over over-optimization.
+# Goal
+To help AI understand and generate accessible, clean, and production-ready UI components.  
+Focus on keyboard navigation, proper ARIA labels, and clarity.  
 
-- Follow the user’s requirements carefully & to the letter.
-- First think step-by-step - describe your plan for what to build in pseudocode, written out in great detail.
-- Confirm, then write code!
-- Always write correct, best practice, DRY principle (Dont Repeat Yourself), bug free, fully functional and working code also it should be aligned to listed rules down below at Code Implementation Guidelines .
-- Focus on easy and readability code, over being performant.
-- Fully implement all requested functionality.
-- Leave NO todo’s, placeholders or missing pieces.
-- Ensure code is complete! Verify thoroughly finalised.
-- Include all required imports, and ensure proper naming of key components.
-- Be concise Minimize any other prose.
-- If you think there might not be a correct answer, you say so.
-- If you do not know the answer, say so, instead of guessing.
+# Guidelines
+- Use ShadCN components from "@/components/ui/*"
+- If unavailable, use TailwindCSS with semantic HTML
+- All text content and comments must be in English
+- Always add accessibility: tabIndex, aria-label, onKeyDown, etc.
+- Use `class:` directive instead of ternary `? :`
+- Use `const` for all functions, prefix event handlers with `handle`
+- Avoid nesting by using early returns
+- Use clear, self-explanatory function and variable names
+- Component must be fully implemented and bug-free
+- Add English comments for each UI section
 
-### Coding Environment
-The user asks questions about the following coding languages:
-- ReactJS
-- NextJS
-- JavaScript
-- TypeScript
-- ShadCN
-- TailwindCSS
-- HTML
-- CSS
+# File Structure Rules
+- Divide logic and UI into multiple small, clear files and folders
+- Pages, components, hooks, types, utils must be separated
+- Files must be short and easy to read
+- Avoid bloated files with too many lines or responsibilities
+- Structure should feel modular and professional
 
-### Code Implementation Guidelines
-Follow these rules when you write code:
-- Use early returns whenever possible to make the code more readable.
-- Always use Tailwind classes for styling HTML elements; avoid using CSS or tags.
-- Use “class:” instead of the tertiary operator in class tags whenever possible.
-- Use descriptive variable and function/const names. Also, event functions should be named with a “handle” prefix, like “handleClick” for onClick and “handleKeyDown” for onKeyDown.
-- Implement accessibility features on elements. For example, a tag should have a tabindex=“0”, aria-label, on:click, and on:keydown, and similar attributes.
-- Use consts instead of functions, for example, “const toggle = () =>”. Also, define a type if possible.
+# Example Comments (in code)
+```tsx
+// Button to trigger modal
+// Text: "Click to Open"
+
+// Modal title
+// Text: "Are you sure you want to delete this item?"
+
+// Confirm button
+// Text: "Yes, Delete"
+
+// Cancel button
+// Text: "Cancel"
+
+// Accessible button with keyboard support
+// tabIndex=0
+// aria-label="Open delete confirmation modal"
+// onKeyDown={handleKeyDown}
+```
+
+# Output Example
+- Code should contain hardcoded text in English (no placeholders)
+- Include type definitions for props, state, and handlers
+- All handlers must be named (e.g., handleClickConfirm)
+
+# Do Not
+- Do not leave TODOs or placeholders
+- Do not use non-English text in comments or code
+- Do not use inline styles or custom CSS files
+- Do not skip accessibility
+- Do not write everything in a single file
+
+# Examples
+- "Click the button" instead of "Butona tıkla"
+- "Submit the form" instead of "Formu gönder"
+====

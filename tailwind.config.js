@@ -11,6 +11,9 @@ export default {
       },
     },
     extend: {
+      fontFamily: {
+        sans: ["Geist", "Inter", "system-ui", "sans-serif"],
+      },
       colors: {
         border: "var(--border)",
         input: "var(--input)",

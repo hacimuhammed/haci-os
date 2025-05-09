@@ -22,16 +22,6 @@ import { useWindowManagerStore } from "../store/windowManagerStore";
 import { v4 as uuidv4 } from "uuid";
 import { getIconPath } from "../icons/iconPaths";
 
-// AnimationType tipini import ediyorum
-type AnimationType =
-  | "fade"
-  | "scale"
-  | "slide"
-  | "flip"
-  | "rotate"
-  | "none"
-  | "jellyfish";
-
 export const SettingsPanel = () => {
   const {
     appearance,
@@ -63,47 +53,47 @@ export const SettingsPanel = () => {
 
   // Kullanılabilir pencere animasyonları
   const windowAnimations = [
-    { id: "none", label: "Yok" },
-    { id: "fade", label: "Solma" },
-    { id: "scale", label: "Ölçekleme" },
-    { id: "slide", label: "Kaydırma" },
-    { id: "flip", label: "Çevirme" },
-    { id: "rotate", label: "Döndürme" },
+    { id: "none", label: "None" },
+    { id: "fade", label: "Fade" },
+    { id: "scale", label: "Scale" },
+    { id: "slide", label: "Slide" },
+    { id: "flip", label: "Flip" },
+    { id: "rotate", label: "Rotate" },
     { id: "jellyfish", label: "Jellyfish" },
   ];
 
   // Sidebar menü öğeleri
   const sidebarItems = [
-    { id: "appearance", label: "Görünüm", icon: "🎨" },
-    { id: "system", label: "Sistem", icon: "⚙️" },
-    { id: "tweaks", label: "İnce Ayarlar", icon: "🛠️" },
+    { id: "appearance", label: "Appearance" },
+    { id: "system", label: "System" },
+    { id: "tweaks", label: "Tweaks" },
   ];
 
-  // Görünüm içeriği
+  // Appearance içeriği
   const AppearanceContent = () => (
     <div>
-      <h2 className="text-lg font-semibold mb-4">Görünüm Ayarları</h2>
+      <h2 className="text-lg font-semibold mb-4">Appearance Settings</h2>
 
       <div className="mb-4">
-        <h3 className="text-md font-medium mb-2">Tema</h3>
+        <h3 className="text-md font-medium mb-2">Theme</h3>
         <div className="flex space-x-2">
           <Button
             variant={currentTheme.name === "light" ? "default" : "outline"}
             onClick={() => setTheme("light")}
           >
-            Açık
+            Light
           </Button>
           <Button
-            variant={currentTheme.name === "dark" ? "default" : "outline"}
+            variant={currentTheme.name === "light" ? "default" : "outline"}
             onClick={() => setTheme("dark")}
           >
-            Koyu
+            Dark
           </Button>
         </div>
       </div>
 
       <div>
-        <h3 className="text-md font-medium mb-2">Duvar Kağıdı</h3>
+        <h3 className="text-md font-medium mb-2">Wallpaper</h3>
         <div className="grid grid-cols-2 gap-2">
           {wallpapers.map((wallpaper) => (
             <div
@@ -117,7 +107,7 @@ export const SettingsPanel = () => {
             >
               <img
                 src={wallpaper}
-                alt="Duvar kağıdı"
+                alt="Wallpaper"
                 className="w-full h-24 object-cover"
               />
             </div>
@@ -130,38 +120,38 @@ export const SettingsPanel = () => {
   // Sistem içeriği
   const SystemContent = () => (
     <div>
-      <h2 className="text-lg font-semibold mb-4">Sistem Ayarları</h2>
+      <h2 className="text-lg font-semibold mb-4">System Settings</h2>
 
       <div className="mb-4">
-        <h3 className="text-md font-medium mb-2">Dil</h3>
+        <h3 className="text-md font-medium mb-2">Language</h3>
         <Select
           value={system.language}
           onValueChange={(value) => setLanguage(value)}
         >
           <SelectTrigger className="w-full">
-            <SelectValue placeholder="Dil Seçin" />
+            <SelectValue placeholder="Select Language" />
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="en">English</SelectItem>
-            <SelectItem value="tr">Türkçe</SelectItem>
+            <SelectItem value="tr">Turkish</SelectItem>
           </SelectContent>
         </Select>
       </div>
 
       <div>
-        <h3 className="text-md font-medium mb-2">Saat Formatı</h3>
+        <h3 className="text-md font-medium mb-2">Time Format</h3>
         <div className="flex space-x-2">
           <Button
             variant={system.timeFormat === "12h" ? "default" : "outline"}
             onClick={() => setTimeFormat("12h")}
           >
-            12 Saat
+            12 Hours
           </Button>
           <Button
             variant={system.timeFormat === "24h" ? "default" : "outline"}
             onClick={() => setTimeFormat("24h")}
           >
-            24 Saat
+            24 Hours
           </Button>
         </div>
       </div>
@@ -171,16 +161,16 @@ export const SettingsPanel = () => {
   // Tweaks içeriği
   const TweaksContent = () => (
     <div>
-      <h2 className="text-lg font-semibold mb-4">İnce Ayarlar</h2>
+      <h2 className="text-lg font-semibold mb-4">Tweaks Settings</h2>
 
       <div className="mb-8">
-        <h3 className="text-md font-medium mb-2">İkon Paketi</h3>
+        <h3 className="text-md font-medium mb-2">Icon Pack</h3>
         <Select
           value={tweaks.iconPack}
           onValueChange={(value) => setIconPack(value)}
         >
           <SelectTrigger className="w-full">
-            <SelectValue placeholder="İkon Paketi Seçin" />
+            <SelectValue placeholder="Select Icon Pack" />
           </SelectTrigger>
           <SelectContent>
             {iconPacks.map((pack) => (
@@ -192,7 +182,7 @@ export const SettingsPanel = () => {
         </Select>
 
         <div className="mt-4">
-          <h4 className="text-sm font-medium mb-2">Önizleme</h4>
+          <h4 className="text-sm font-medium mb-2">Preview</h4>
           <div className="grid grid-cols-4 gap-4 bg-card p-4 rounded-md">
             <div className="flex flex-col items-center">
               <img
@@ -205,33 +195,33 @@ export const SettingsPanel = () => {
             <div className="flex flex-col items-center">
               <img
                 src={getIconPath(tweaks.iconPack, "file-manager")}
-                alt="Dosyalar"
+                alt="Files"
                 className="w-12 h-12 mb-2"
               />
-              <span className="text-xs">Dosyalar</span>
+              <span className="text-xs">Files</span>
             </div>
             <div className="flex flex-col items-center">
               <img
                 src={getIconPath(tweaks.iconPack, "text-editor")}
-                alt="Düzenleyici"
+                alt="Text Editor"
                 className="w-12 h-12 mb-2"
               />
-              <span className="text-xs">Düzenleyici</span>
+              <span className="text-xs">Text Editor</span>
             </div>
             <div className="flex flex-col items-center">
               <img
                 src={getIconPath(tweaks.iconPack, "preferences-system")}
-                alt="Ayarlar"
+                alt="Settings"
                 className="w-12 h-12 mb-2"
               />
-              <span className="text-xs">Ayarlar</span>
+              <span className="text-xs">Settings</span>
             </div>
           </div>
         </div>
       </div>
 
       <div className="mb-4">
-        <h3 className="text-md font-medium mb-2">Pencere Animasyonları</h3>
+        <h3 className="text-md font-medium mb-2">Window Animations</h3>
         <Select
           value={tweaks.windowAnimation}
           onValueChange={(value) =>
@@ -239,7 +229,7 @@ export const SettingsPanel = () => {
           }
         >
           <SelectTrigger className="w-full">
-            <SelectValue placeholder="Animasyon Seçin" />
+            <SelectValue placeholder="Select Animation" />
           </SelectTrigger>
           <SelectContent>
             {windowAnimations.map((animation) => (
@@ -251,11 +241,10 @@ export const SettingsPanel = () => {
         </Select>
 
         <div className="bg-card p-4 rounded-md mt-4">
-          <h4 className="text-sm font-medium mb-2">Animasyon Önizlemesi</h4>
+          <h4 className="text-sm font-medium mb-2">Animation Preview</h4>
           <p className="text-xs text-muted-foreground mb-4">
-            Pencereler açılırken ve kapanırken seçilen animasyon efekti
-            uygulanacaktır. "Yok" seçeneği ile animasyonlar tamamen
-            kapatılabilir.
+            Windows will apply the selected animation when they open and close.
+            The "None" option will completely disable animations.
           </p>
           <div className="flex justify-center">
             <Button
@@ -283,11 +272,11 @@ export const SettingsPanel = () => {
                     <div className="h-full w-full flex items-center justify-center">
                       <div className="text-center max-w-md bg-background p-6 rounded-lg shadow-lg">
                         <h2 className="text-xl font-bold mb-4">
-                          {tweaks.windowAnimation} Animasyonu
+                          {tweaks.windowAnimation} Animation
                         </h2>
                         <p className="mb-2">
-                          Bu pencere önizleme için oluşturuldu ve 3 saniye
-                          içinde kapanacak.
+                          This window is created for preview purposes and will
+                          close in 3 seconds.
                         </p>
                       </div>
                     </div>
@@ -295,7 +284,7 @@ export const SettingsPanel = () => {
 
                   addWindow({
                     id,
-                    title: "Animasyon Önizlemesi",
+                    title: "Animation Preview",
                     type: "animation-preview",
                     position,
                     size,
@@ -306,18 +295,18 @@ export const SettingsPanel = () => {
                       content: customContent,
                     },
                   });
-                  console.log("Pencere başarıyla eklendi");
+                  console.log("Window added successfully");
                 } catch (error) {
-                  console.error("Pencere eklenirken hata:", error);
+                  console.error("Error adding window:", error);
                 }
 
                 setTimeout(() => {
-                  console.log("Pencere kapatılıyor, ID:", id);
+                  console.log("Window is closing, ID:", id);
                   removeWindow(id);
                 }, 3000);
               }}
             >
-              Animasyonu Test Et
+              Test Animation
             </Button>
           </div>
         </div>
@@ -330,25 +319,24 @@ export const SettingsPanel = () => {
       {/* Sidebar */}
       <div className="w-64 border-r border-border bg-sidebar text-sidebar-foreground flex flex-col">
         <div className="p-4 border-b border-border">
-          <h1 className="text-xl font-bold">Ayarlar</h1>
+          <h1 className="!text-base text-center font-bold">Settings</h1>
         </div>
-        <nav className="flex-1 p-2">
+        <nav className="flex-1 p-2 w-full flex flex-col gap-2">
           {sidebarItems.map((item) => (
-            <button
+            <span
               key={item.id}
               onClick={() =>
                 setSelectedTab(item.id as "appearance" | "system" | "tweaks")
               }
               className={cn(
-                "w-full flex items-center p-3 gap-3 rounded-md text-sm mb-1 transition-colors",
+                "w-full flex justify-start font-normal text-left px-4 py-2 rounded-md",
                 selectedTab === item.id
                   ? "bg-sidebar-accent text-sidebar-accent-foreground"
-                  : "hover:bg-sidebar-accent/30 text-sidebar-foreground"
+                  : "text-sidebar-foreground hover:bg-sidebar-accent/30 hover:text-sidebar-foreground"
               )}
             >
-              <span className="text-xl">{item.icon}</span>
               <span>{item.label}</span>
-            </button>
+            </span>
           ))}
         </nav>
         <div className="p-4 border-t border-border">
