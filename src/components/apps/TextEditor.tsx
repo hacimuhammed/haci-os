@@ -1,9 +1,9 @@
 import { useEffect, useRef, useState } from "react";
 
-import { Button } from "./ui/button";
-import { calculateCascadingPosition } from "../utils/window";
-import { useFileManagerStore } from "../store/fileManagerStore";
-import { useWindowManagerStore } from "../store/windowManagerStore";
+import { Button } from "../ui/button";
+import { calculateCascadingPosition } from "../../utils/window";
+import { useFileManagerStore } from "../../store/fileManagerStore";
+import { useWindowManagerStore } from "../../store/windowManagerStore";
 import { v4 as uuidv4 } from "uuid";
 
 // Tab yapısı için interface

@@ -1,11 +1,11 @@
 import {
   calculateCascadingPosition,
   calculateCenterPosition,
-} from "../utils/window";
+} from "../../utils/window";
 import { useEffect, useRef, useState } from "react";
 
-import { useFileManagerStore } from "../store/fileManagerStore";
-import { useWindowManagerStore } from "../store/windowManagerStore";
+import { useFileManagerStore } from "../../store/fileManagerStore";
+import { useWindowManagerStore } from "../../store/windowManagerStore";
 import { v4 as uuidv4 } from "uuid";
 
 interface Command {

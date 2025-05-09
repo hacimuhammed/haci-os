@@ -1,5 +1,25 @@
 import { create } from "zustand";
 
+// Context Menu türleri
+export interface ContextMenuItem {
+  id: string;
+  label: string;
+  icon?: React.ReactNode;
+  action: () => void;
+  disabled?: boolean;
+  separator?: boolean;
+  variant?: "default" | "destructive";
+}
+
+export interface ContextMenuInfo {
+  visible: boolean;
+  x: number;
+  y: number;
+  items: ContextMenuItem[];
+  sourceWindowId: string | null;
+  zIndex: number;
+}
+
 interface Window {
   id: string;
   title: string;
@@ -25,6 +45,7 @@ interface WindowManagerState {
   selectedWindowIndex: number; // Alt+Q menüsünde seçili pencere
   splitterPosition: number; // Ekran bölücü pozisyonu (0-100 arası yüzde)
   isSplitterVisible: boolean; // Ekran bölücü görünür mü
+  contextMenu: ContextMenuInfo; // Context menu durumu
   addWindow: (window: Window) => void;
   removeWindow: (id: string) => void;
   updateWindow: (id: string, updates: Partial<Window>) => void;
@@ -41,6 +62,14 @@ interface WindowManagerState {
   updateSplitterPosition: (position: number) => void;
   setSplitterVisibility: (isVisible: boolean) => void;
   endSplitOnDrag: (draggedWindowId: string) => void;
+  showContextMenu: (
+    x: number,
+    y: number,
+    items: ContextMenuItem[],
+    sourceWindowId: string | null
+  ) => void;
+  hideContextMenu: () => void;
+  recalculateZIndices: () => void;
 }
 
 export const useWindowManagerStore = create<WindowManagerState>((set, get) => ({
@@ -52,6 +81,15 @@ export const useWindowManagerStore = create<WindowManagerState>((set, get) => ({
   selectedWindowIndex: 0,
   splitterPosition: 50, // Varsayılan olarak %50
   isSplitterVisible: false,
+  // Context menu için başlangıç değerleri
+  contextMenu: {
+    visible: false,
+    x: 0,
+    y: 0,
+    items: [],
+    sourceWindowId: null,
+    zIndex: 9999,
+  },
   addWindow: (window) =>
     set((state) => {
       console.log("addWindow çağrıldı:", window);
@@ -527,6 +565,83 @@ export const useWindowManagerStore = create<WindowManagerState>((set, get) => ({
       return {
         windows: updatedWindows,
         isSplitterVisible: false,
+      };
+    }),
+  // Context menu fonksiyonları
+  showContextMenu: (x, y, items, sourceWindowId) =>
+    set((state) => {
+      // Context menu açılırken, kaynak pencerenin zIndex'ini kullan
+      let contextZIndex = 9999; // Varsayılan yüksek bir zIndex
+
+      if (sourceWindowId) {
+        const sourceWindow = state.windows.find((w) => w.id === sourceWindowId);
+        if (sourceWindow) {
+          // Kaynak pencerenin üzerinde göster
+          contextZIndex = sourceWindow.zIndex + 1;
+        }
+      } else {
+        // Eğer kaynak pencere yoksa en yüksek zIndex'in üzerinde göster
+        const maxZIndex = Math.max(...state.windows.map((w) => w.zIndex), 0);
+        contextZIndex = maxZIndex + 1;
+      }
+
+      return {
+        contextMenu: {
+          visible: true,
+          x,
+          y,
+          items,
+          sourceWindowId,
+          zIndex: contextZIndex,
+        },
+      };
+    }),
+
+  hideContextMenu: () =>
+    set({
+      contextMenu: {
+        visible: false,
+        x: 0,
+        y: 0,
+        items: [],
+        sourceWindowId: null,
+        zIndex: 9999,
+      },
+    }),
+
+  recalculateZIndices: () =>
+    set((state) => {
+      // Tüm pencereleri zIndex'e göre sırala (büyükten küçüğe)
+      const sortedWindows = [...state.windows].sort(
+        (a, b) => b.zIndex - a.zIndex
+      );
+
+      // Yeni zIndex'leri atanmış pencereler
+      const updatedWindows = sortedWindows.map((window, index) => ({
+        ...window,
+        zIndex: sortedWindows.length - index, // En yüksek zIndex'i en üstteki pencereye ver
+      }));
+
+      // Eğer context menu görünürse ve bir pencereye bağlıysa,
+      // o pencerenin zIndex'ine göre context menu zIndex'ini ayarla
+      let contextMenuZIndex = state.contextMenu.zIndex;
+
+      if (state.contextMenu.visible && state.contextMenu.sourceWindowId) {
+        const sourceWindow = updatedWindows.find(
+          (w) => w.id === state.contextMenu.sourceWindowId
+        );
+
+        if (sourceWindow) {
+          contextMenuZIndex = sourceWindow.zIndex + 1;
+        }
+      }
+
+      return {
+        windows: updatedWindows,
+        contextMenu: {
+          ...state.contextMenu,
+          zIndex: contextMenuZIndex,
+        },
       };
     }),
 }));

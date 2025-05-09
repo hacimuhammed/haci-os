@@ -1,7 +1,10 @@
 import { useEffect, useState } from "react";
 
-import { Button } from "./ui/button";
-import { useFileManagerStore } from "../store/fileManagerStore";
+import { Button } from "../ui/button";
+import { Input } from "../ui/input";
+import { calculateCascadingPosition } from "../../utils/window";
+import { useFileManagerStore } from "../../store/fileManagerStore";
+import { useWindowManagerStore } from "../../store/windowManagerStore";
 import { v4 as uuidv4 } from "uuid";
 
 interface FileManagerProps {
@@ -15,7 +18,9 @@ interface FileManagerProps {
 }
 
 export const FileManager = ({ mode, data }: FileManagerProps) => {
-  const { files, addFile, currentPath, setCurrentPath } = useFileManagerStore();
+  const { files, addFile, currentPath, setCurrentPath, renameFile } =
+    useFileManagerStore();
+  const { addWindow, showContextMenu } = useWindowManagerStore();
   const [selectedFileId, setSelectedFileId] = useState<string | null>(null);
   const [showNewFolderDialog, setShowNewFolderDialog] = useState(false);
   const [newFolderName, setNewFolderName] = useState("");
@@ -104,13 +109,90 @@ export const FileManager = ({ mode, data }: FileManagerProps) => {
       return;
     }
 
-    // Dosyayı güncelle
-    const fileIndex = files.findIndex((f) => f.id === isRenaming);
-    if (fileIndex !== -1) {
-      files[fileIndex].name = newName;
+    // Dosyayı güncelle - renameFile fonksiyonuyla
+    renameFile(isRenaming, newName);
+    setIsRenaming(null);
+  };
+
+  // Dosyayı metin editöründe aç
+  const openFileInTextEditor = (fileId: string) => {
+    const file = files.find((f) => f.id === fileId);
+    if (!file || file.type === "folder") return;
+
+    const size = { width: 900, height: 700 };
+    const position = calculateCascadingPosition(size.width, size.height);
+
+    addWindow({
+      id: uuidv4(),
+      title: file.name,
+      type: "text-editor",
+      position,
+      size,
+      isMinimized: false,
+      isMaximized: false,
+      zIndex: 1,
+      fileId: file.id,
+    });
+  };
+
+  // Klasöre git
+  const navigateToFolder = (fileId: string) => {
+    const file = files.find((f) => f.id === fileId);
+    if (!file || file.type !== "folder") return;
+
+    setCurrentPath(`${currentPath}/${file.name}`.replace(/\/+/g, "/"));
+  };
+
+  // Sağ tık context menüsünü göster
+  const handleContextMenu = (e: React.MouseEvent, fileId: string) => {
+    e.preventDefault();
+
+    const file = files.find((f) => f.id === fileId);
+    if (!file) return;
+
+    // Dosyayı seç
+    setSelectedFileId(fileId);
+
+    const menuItems = [];
+
+    // Klasör context menüsü
+    if (file.type === "folder") {
+      menuItems.push(
+        {
+          id: "navigate",
+          label: "Klasöre git",
+          action: () => navigateToFolder(fileId),
+        },
+        {
+          id: "rename",
+          label: "Yeniden adlandır",
+          action: () => startRenaming(fileId),
+        }
+      );
+    }
+    // Dosya context menüsü
+    else {
+      menuItems.push(
+        {
+          id: "open",
+          label: "Metin editörü ile aç",
+          action: () => openFileInTextEditor(fileId),
+        },
+        {
+          id: "rename",
+          label: "Yeniden adlandır",
+          action: () => startRenaming(fileId),
+        }
+      );
     }
 
-    setIsRenaming(null);
+    // Context menüyü göster
+    showContextMenu(
+      e.clientX,
+      e.clientY,
+      menuItems,
+      (window as any).__WINDOW_ID__
+    );
   };
 
   // Mevcut klasördeki dosya ve klasörleri göster
@@ -156,10 +238,7 @@ export const FileManager = ({ mode, data }: FileManagerProps) => {
                 }`}
                 onClick={() => handleFileClick(file.id)}
                 onDoubleClick={() => handleFileDoubleClick(file.id)}
-                onContextMenu={(e) => {
-                  e.preventDefault();
-                  startRenaming(file.id);
-                }}
+                onContextMenu={(e) => handleContextMenu(e, file.id)}
               >
                 {isRenaming === file.id ? (
                   <input
@@ -194,8 +273,8 @@ export const FileManager = ({ mode, data }: FileManagerProps) => {
       {showNewFolderDialog && (
         <div className="p-3 bg-card border-t border-border">
           <div className="text-sm mb-2">Yeni klasör adı:</div>
-          <div className="flex">
-            <input
+          <div className="flex gap-2">
+            <Input
               type="text"
               className="flex-1 bg-input border border-input px-2 py-1 rounded-l"
               value={newFolderName}
@@ -207,18 +286,18 @@ export const FileManager = ({ mode, data }: FileManagerProps) => {
               }}
             />
             <Button
-              variant="default"
+              variant="secondary"
               className="px-3 py-1 rounded-none rounded-r"
               onClick={createNewFolder}
             >
-              Oluştur
+              Create
             </Button>
             <Button
               variant="secondary"
               className="px-3 py-1 ml-2"
               onClick={() => setShowNewFolderDialog(false)}
             >
-              İptal
+              Cancel
             </Button>
           </div>
         </div>
@@ -227,7 +306,7 @@ export const FileManager = ({ mode, data }: FileManagerProps) => {
       {/* Kaydetme paneli */}
       {mode === "save" && (
         <div className="p-3 bg-card border-t border-border">
-          <div className="text-sm mb-2">Dosya adı:</div>
+          <div className="text-sm mb-2">File name:</div>
           <div className="flex">
             <input
               type="text"
@@ -244,7 +323,7 @@ export const FileManager = ({ mode, data }: FileManagerProps) => {
               className="px-3 py-1 rounded-none rounded-r"
               onClick={saveFile}
             >
-              Kaydet
+              Save
             </Button>
           </div>
         </div>
@@ -262,7 +341,7 @@ export const FileManager = ({ mode, data }: FileManagerProps) => {
               }
             }}
           >
-            Aç
+            Open
           </Button>
         </div>
       )}

@@ -14,6 +14,7 @@ interface FileManagerState {
   addFile: (file: FileItem) => void;
   removeFile: (id: string) => void;
   updateFile: (id: string, updates: Partial<FileItem>) => void;
+  renameFile: (id: string, newName: string) => void;
   setCurrentPath: (path: string) => void;
 }
 
@@ -27,6 +28,12 @@ export const useFileManagerStore = create<FileManagerState>((set) => ({
     set((state) => ({
       files: state.files.map((file) =>
         file.id === id ? { ...file, ...updates } : file
+      ),
+    })),
+  renameFile: (id, newName) =>
+    set((state) => ({
+      files: state.files.map((file) =>
+        file.id === id ? { ...file, name: newName } : file
       ),
     })),
   setCurrentPath: (path) => set({ currentPath: path }),

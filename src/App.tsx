@@ -1,14 +1,18 @@
 import { AnimatePresence, motion } from "framer-motion";
-import { TextEditor, TextEditorHeaderTools } from "./components/TextEditor";
+import {
+  TextEditor,
+  TextEditorHeaderTools,
+} from "./components/apps/TextEditor";
 import { useEffect, useRef, useState } from "react";
 
 import { AnimationPreview } from "./components/AnimationPreview";
 import { DashToDock } from "./components/DashToDock";
 import { Desktop } from "./components/Desktop";
-import { FileManager } from "./components/FileManager";
-import { Nano } from "./components/Nano";
-import { SettingsPanel } from "./components/SettingsPanel";
-import { Terminal } from "./components/Terminal";
+import { FileManager } from "./components/apps/FileManager";
+import { Nano } from "./components/apps/Nano";
+import { SettingsPanel } from "./components/apps/SettingsPanel";
+import { SystemContextMenu } from "./components/SystemContextMenu";
+import { Terminal } from "./components/apps/Terminal";
 import { Topbar } from "./components/Topbar";
 import { Window } from "./components/Window";
 import { useThemeStore } from "./store/themeStore";
@@ -405,13 +409,21 @@ function App() {
   };
 
   return (
-    <div className="w-screen h-screen overflow-hidden flex flex-col bg-background text-foreground">
-      <Topbar />
-      <div className="flex-1 relative">
+    <div
+      className={`h-screen flex flex-col ${
+        currentTheme.name === "dark" ? "dark" : ""
+      }`}
+    >
+      <div className="bg-background text-foreground relative flex-1 overflow-hidden">
+        {/* Desktop */}
         <Desktop />
-        {windows.map((window) => {
-          console.log("Window render:", window.id, window.type);
-          return (
+
+        {/* Topbar */}
+        <Topbar />
+
+        {/* Pencereler */}
+        <AnimatePresence>
+          {windows.map((window) => (
             <Window
               key={window.id}
               id={window.id}
@@ -419,19 +431,23 @@ function App() {
               initialPosition={window.position}
               initialSize={window.size}
               headerLeft={renderHeaderLeft(window)}
-              content={window.data?.content}
-            >
-              {renderWindowContent(window)}
-            </Window>
-          );
-        })}
+              content={renderWindowContent(window)}
+            />
+          ))}
+        </AnimatePresence>
+
+        {/* Dock */}
+        <DashToDock />
+
+        {/* Alt+Q Switcher */}
+        <AnimatePresence>{isAltQOpen && <AltQSwitcher />}</AnimatePresence>
+
         {/* Ekran Bölücü */}
         <Splitter />
-      </div>
-      <DashToDock />
 
-      {/* Alt+Q Switcher */}
-      <AnimatePresence>{isAltQOpen && <AltQSwitcher />}</AnimatePresence>
+        {/* Sistem Context Menu */}
+        <SystemContextMenu />
+      </div>
     </div>
   );
 }

@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 
-import { Button } from "./ui/button";
-import { useFileManagerStore } from "../store/fileManagerStore";
-import { useWindowManagerStore } from "../store/windowManagerStore";
+import { Button } from "../ui/button";
+import { useFileManagerStore } from "../../store/fileManagerStore";
+import { useWindowManagerStore } from "../../store/windowManagerStore";
 
 interface NanoProps {
   fileId: string;

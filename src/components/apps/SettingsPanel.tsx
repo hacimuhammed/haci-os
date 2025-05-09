@@ -4,23 +4,23 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "./ui/select";
+} from "../ui/select";
 
-import { Button } from "./ui/button";
+import { Button } from "../ui/button";
 import {
   calculateCenterPosition,
   calculateCascadingPosition,
-} from "../utils/window";
-import { cn } from "../lib/utils";
+} from "../../utils/window";
+import { cn } from "../../lib/utils";
 import {
   useSettingsStore,
   type WindowAnimationType,
-} from "../store/settingsStore";
+} from "../../store/settingsStore";
 import { useState } from "react";
-import { useThemeStore } from "../store/themeStore";
-import { useWindowManagerStore } from "../store/windowManagerStore";
+import { useThemeStore } from "../../store/themeStore";
+import { useWindowManagerStore } from "../../store/windowManagerStore";
 import { v4 as uuidv4 } from "uuid";
-import { getIconPath } from "../icons/iconPaths";
+import { getIconPath } from "../../icons/iconPaths";
 
 export const SettingsPanel = () => {
   const {

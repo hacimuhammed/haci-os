@@ -391,6 +391,19 @@ export const Window = ({
     setIsClosing(true);
   };
 
+  // Window ID'sini global window nesnesine ekle - bunu içerideki uygulamalar kullanacak
+  useEffect(() => {
+    // Pencere ID'sini global nesnede tut
+    (window as any).__WINDOW_ID__ = id;
+
+    return () => {
+      // Temizleme, pencere kapatıldığında
+      if ((window as any).__WINDOW_ID__ === id) {
+        delete (window as any).__WINDOW_ID__;
+      }
+    };
+  }, [id]);
+
   return (
     <AnimatePresence mode="wait">
       <motion.div
@@ -423,6 +436,8 @@ export const Window = ({
             removeWindow(id);
           }
         }}
+        // Window ID'si - veri özniteliği olarak ekle
+        data-window-id={id}
       >
         {/* Header */}
         <div
