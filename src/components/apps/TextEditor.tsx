@@ -21,8 +21,7 @@ interface TextEditorProps {
 
 // HeaderLeft için bileşen, Window'a aktarılacak
 export const TextEditorHeaderTools = () => {
-  const { addWindow, windows, updateWindow } = useWindowManagerStore();
-  const { files } = useFileManagerStore();
+  const { addWindow } = useWindowManagerStore();
 
   const createNewTab = () => {
     // Mevcut pencere kimliğini almak için ilgili window bileşenini kullanırız
@@ -62,8 +61,10 @@ export const TextEditorHeaderTools = () => {
     // Pencereyi biraz yukarıda oluşturmak için y pozisyonunu ayarla
     position.y = Math.max(50, position.y - 150);
 
+    const windowId = uuidv4();
+
     addWindow({
-      id: uuidv4(),
+      id: windowId,
       title: "Open File",
       type: "file-manager",
       position,
@@ -73,30 +74,34 @@ export const TextEditorHeaderTools = () => {
       zIndex: 100,
       mode: "open",
       data: {
-        onOpen: (fileId: string) => {
-          const file = files.find((f) => f.id === fileId);
-          if (file) {
-            const editorSize = { width: 900, height: 700 };
-            const editorPosition = calculateCascadingPosition(
-              editorSize.width,
-              editorSize.height
-            );
-
-            addWindow({
-              id: uuidv4(),
-              title: file.name,
-              type: "text-editor",
-              position: editorPosition,
-              size: editorSize,
-              isMinimized: false,
-              isMaximized: false,
-              zIndex: 1,
-              fileId: file.id,
-            });
-          }
-        },
+        onOpen: (fileId: string) => openFileInEditor(fileId),
       },
     });
+  };
+
+  const openFileInEditor = (fileId: string) => {
+    const { files } = useFileManagerStore.getState();
+    const file = files.find((f) => f.id === fileId);
+
+    if (file) {
+      const editorSize = { width: 900, height: 700 };
+      const editorPosition = calculateCascadingPosition(
+        editorSize.width,
+        editorSize.height
+      );
+
+      addWindow({
+        id: uuidv4(),
+        title: file.name,
+        type: "text-editor",
+        position: editorPosition,
+        size: editorSize,
+        isMinimized: false,
+        isMaximized: false,
+        zIndex: 1,
+        fileId: file.id,
+      });
+    }
   };
 
   return (
@@ -159,6 +164,12 @@ export const TextEditor = ({ initialFileId }: TextEditorProps) => {
   const { files, addFile, updateFile } = useFileManagerStore();
   const { addWindow } = useWindowManagerStore();
   const editorRef = useRef<HTMLTextAreaElement>(null);
+  const windowIdRef = useRef<string | null>(null);
+
+  // Window ID'yi alıp saklayalım
+  useEffect(() => {
+    windowIdRef.current = (window as any).__WINDOW_ID__ || null;
+  }, []);
 
   // Eğer bir fileId ile açıldıysa, dosyayı yükle
   useEffect(() => {
@@ -312,8 +323,10 @@ export const TextEditor = ({ initialFileId }: TextEditorProps) => {
     const size = { width: 600, height: 500 };
     const position = calculateCascadingPosition(size.width, size.height);
 
+    const fileManagerId = uuidv4();
+
     addWindow({
-      id: uuidv4(),
+      id: fileManagerId,
       title: "Dosya Kaydet",
       type: "file-manager",
       position,

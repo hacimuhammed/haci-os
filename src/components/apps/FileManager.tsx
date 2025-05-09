@@ -4,6 +4,7 @@ import { Button } from "../ui/button";
 import { Input } from "../ui/input";
 import { calculateCascadingPosition } from "../../utils/window";
 import { useFileManagerStore } from "../../store/fileManagerStore";
+import { useUserStore } from "../../store/userStore";
 import { useWindowManagerStore } from "../../store/windowManagerStore";
 import { v4 as uuidv4 } from "uuid";
 
@@ -18,9 +19,11 @@ interface FileManagerProps {
 }
 
 export const FileManager = ({ mode, data }: FileManagerProps) => {
-  const { files, addFile, currentPath, setCurrentPath, renameFile } =
-    useFileManagerStore();
+  const { files, addFile, renameFile } = useFileManagerStore();
   const { addWindow, showContextMenu } = useWindowManagerStore();
+  const { currentUser } = useUserStore();
+  // Her FileManager penceresi için bağımsız bir yol durumu tut
+  const [localCurrentPath, setLocalCurrentPath] = useState("/");
   const [selectedFileId, setSelectedFileId] = useState<string | null>(null);
   const [showNewFolderDialog, setShowNewFolderDialog] = useState(false);
   const [newFolderName, setNewFolderName] = useState("");
@@ -46,8 +49,10 @@ export const FileManager = ({ mode, data }: FileManagerProps) => {
     if (!file) return;
 
     if (file.type === "folder") {
-      // Klasöre git
-      setCurrentPath(`${currentPath}/${file.name}`.replace(/\/+/g, "/"));
+      // Klasöre git - local path kullan
+      setLocalCurrentPath(
+        `${localCurrentPath}/${file.name}`.replace(/\/+/g, "/")
+      );
     } else if (mode === "open" && data?.onOpen) {
       // Dosya seçme modunda, dosyayı aç
       data.onOpen(file.id);
@@ -55,19 +60,22 @@ export const FileManager = ({ mode, data }: FileManagerProps) => {
   };
 
   const goToParentFolder = () => {
-    if (currentPath === "/") return;
-    const parentPath = currentPath.split("/").slice(0, -1).join("/") || "/";
-    setCurrentPath(parentPath);
+    if (localCurrentPath === "/") return;
+    // Üst klasöre git - local path kullan
+    const parentPath =
+      localCurrentPath.split("/").slice(0, -1).join("/") || "/";
+    setLocalCurrentPath(parentPath);
   };
 
   const createNewFolder = () => {
     if (!newFolderName.trim()) return;
 
+    // Yeni klasör oluştur - local path kullan
     addFile({
       id: uuidv4(),
       name: newFolderName,
       type: "folder",
-      path: currentPath,
+      path: localCurrentPath,
     });
 
     setNewFolderName("");
@@ -78,14 +86,14 @@ export const FileManager = ({ mode, data }: FileManagerProps) => {
     if (!saveFileName.trim() || !mode || mode !== "save" || !data?.content)
       return;
 
-    // Yeni dosya oluştur
+    // Yeni dosya oluştur - local path kullan
     const newFileId = uuidv4();
 
     addFile({
       id: newFileId,
       name: saveFileName,
       type: "file",
-      path: currentPath,
+      path: localCurrentPath,
       content: data.content,
     });
 
@@ -140,7 +148,10 @@ export const FileManager = ({ mode, data }: FileManagerProps) => {
     const file = files.find((f) => f.id === fileId);
     if (!file || file.type !== "folder") return;
 
-    setCurrentPath(`${currentPath}/${file.name}`.replace(/\/+/g, "/"));
+    // Local path kullan
+    setLocalCurrentPath(
+      `${localCurrentPath}/${file.name}`.replace(/\/+/g, "/")
+    );
   };
 
   // Sağ tık context menüsünü göster
@@ -195,8 +206,17 @@ export const FileManager = ({ mode, data }: FileManagerProps) => {
     );
   };
 
-  // Mevcut klasördeki dosya ve klasörleri göster
-  const currentItems = files.filter((file) => file.path === currentPath);
+  // Mevcut klasördeki dosya ve klasörleri göster - local path kullan ve /home özel durumunu kontrol et
+  const currentItems = files.filter((file) => {
+    // Eğer /home dizinindeyse, sadece mevcut kullanıcının klasörünü göster
+    if (localCurrentPath === "/home") {
+      if (!currentUser) return false;
+      return file.path === "/home" && file.name === currentUser.username;
+    }
+
+    // Diğer tüm dizinler için normal filtreleme yap
+    return file.path === localCurrentPath;
+  });
 
   return (
     <div className="h-full flex flex-col bg-background text-foreground">
@@ -217,7 +237,7 @@ export const FileManager = ({ mode, data }: FileManagerProps) => {
         >
           New Folder
         </Button>
-        <div className="ml-auto">{currentPath}</div>
+        <div className="ml-auto">{localCurrentPath}</div>
       </div>
 
       {/* Ana içerik */}

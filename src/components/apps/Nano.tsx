@@ -31,11 +31,7 @@ export const Nano = ({ fileId }: NanoProps) => {
     }
 
     // Window id'yi alıp saklayalım
-    const urlParams = new URLSearchParams(window.location.search);
-    const wId = urlParams.get("windowId");
-    if (wId) {
-      windowId.current = wId;
-    }
+    windowId.current = (window as any).__WINDOW_ID__ || null;
   }, [fileId, files]);
 
   const handleSave = () => {

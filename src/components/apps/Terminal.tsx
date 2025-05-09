@@ -31,17 +31,17 @@ export const Terminal = () => {
   const [sudoMode, setSudoMode] = useState(false);
   const [sudoCommand, setSudoCommand] = useState("");
   const [sudoPassword, setSudoPassword] = useState("");
+  // Her terminal penceresi için kendi yerel yolunu tut
+  const [localCurrentPath, setLocalCurrentPath] = useState("/");
 
   const {
     files,
-    currentPath,
-    setCurrentPath,
-    addFile,
-    updateFile,
     getUserAccessibleFiles,
     hasReadPermission,
     hasWritePermission,
     hasExecutePermission,
+    addFile,
+    updateFile,
   } = useFileManagerStore();
 
   const {
@@ -63,6 +63,14 @@ export const Terminal = () => {
       </div>
     );
   }
+
+  // Kullanıcının home dizinini yerel yol olarak belirle
+  useEffect(() => {
+    if (currentUser) {
+      const homePath = `/home/${currentUser.username}`;
+      setLocalCurrentPath(homePath);
+    }
+  }, [currentUser]);
 
   useEffect(() => {
     if (inputRef.current) {
@@ -96,8 +104,8 @@ export const Terminal = () => {
   };
 
   const getFilesAndDirsInCurrentPath = () => {
-    // Kullanıcının erişebileceği dosyaları getir
-    return getUserAccessibleFiles(currentUser.username, currentPath).map(
+    // Kullanıcının erişebileceği dosyaları getir - yerel yolu kullan
+    return getUserAccessibleFiles(currentUser.username, localCurrentPath).map(
       (file) => file.name
     );
   };
@@ -187,7 +195,7 @@ export const Terminal = () => {
         {
           command: "sudo " + sudoCommand,
           output: "sudo: incorrect password",
-          path: currentPath,
+          path: localCurrentPath,
         },
       ]);
       setSudoMode(false);
@@ -211,17 +219,17 @@ export const Terminal = () => {
     setHistoryIndex(-1);
 
     let output = "";
-    let newPath = currentPath;
+    let newPath = localCurrentPath;
 
     // Admin yetkisi olmayan kullanıcıların yetkili işlemleri için sudo kontrolü
     const isAdmin = isSudo || isUserAdmin(currentUser.username);
 
     switch (cmd) {
       case "ls":
-        // Kullanıcının erişebileceği dosyaları göster
+        // Kullanıcının erişebileceği dosyaları göster - yerel yolu kullan
         const accessibleFiles = getUserAccessibleFiles(
           currentUser.username,
-          currentPath
+          localCurrentPath
         );
         output = accessibleFiles
           .map((file) => {
@@ -262,12 +270,12 @@ export const Terminal = () => {
           // Özel durum: '..' ile üst dizine git
           else if (targetPath === "..") {
             const parentPath =
-              currentPath.split("/").slice(0, -1).join("/") || "/";
+              localCurrentPath.split("/").slice(0, -1).join("/") || "/";
             nextPath = parentPath;
           }
           // Nispi yol
           else {
-            nextPath = `${currentPath}/${targetPath}`.replace(/\/+/g, "/");
+            nextPath = `${localCurrentPath}/${targetPath}`.replace(/\/+/g, "/");
           }
 
           // Yol kontrolü ve normalize
@@ -347,29 +355,29 @@ export const Terminal = () => {
             output = `cd: ${targetPath}: Permission denied`;
           } else {
             newPath = nextPath;
-            setCurrentPath(nextPath);
+            setLocalCurrentPath(nextPath); // Global yerine local state'i güncelle
             output = `Changed directory to ${nextPath}`;
           }
         } else {
           // Argüman verilmemişse ev dizinine git
           const homePath = `/home/${currentUser.username}`;
           newPath = homePath;
-          setCurrentPath(homePath);
+          setLocalCurrentPath(homePath); // Global yerine local state'i güncelle
           output = `Changed directory to ${homePath}`;
         }
         break;
 
       case "pwd":
-        output = currentPath;
+        output = localCurrentPath; // Global yerine local state'i kullan
         break;
 
       case "touch":
         if (args[0]) {
-          // Şu anki dizine yazma izni kontrolü
+          // Şu anki dizine yazma izni kontrolü - yerel yolu kullan
           const currentDir = files.find(
             (f) =>
-              f.path === currentPath.split("/").slice(0, -1).join("/") &&
-              f.name === currentPath.split("/").pop()
+              f.path === localCurrentPath.split("/").slice(0, -1).join("/") &&
+              f.name === localCurrentPath.split("/").pop()
           );
 
           if (
@@ -382,7 +390,9 @@ export const Terminal = () => {
 
           const fileExists = files.some(
             (f) =>
-              f.path === currentPath && f.name === args[0] && f.type === "file"
+              f.path === localCurrentPath &&
+              f.name === args[0] &&
+              f.type === "file"
           );
 
           if (fileExists) {
@@ -392,7 +402,7 @@ export const Terminal = () => {
               id: uuidv4(),
               name: args[0],
               type: "file" as const,
-              path: currentPath,
+              path: localCurrentPath,
               content: "",
               owner: currentUser.username,
               permissions: {
@@ -411,11 +421,11 @@ export const Terminal = () => {
 
       case "mkdir":
         if (args[0]) {
-          // Şu anki dizine yazma izni kontrolü
+          // Şu anki dizine yazma izni kontrolü - yerel yolu kullan
           const currentDir = files.find(
             (f) =>
-              f.path === currentPath.split("/").slice(0, -1).join("/") &&
-              f.name === currentPath.split("/").pop()
+              f.path === localCurrentPath.split("/").slice(0, -1).join("/") &&
+              f.name === localCurrentPath.split("/").pop()
           );
 
           if (
@@ -428,7 +438,7 @@ export const Terminal = () => {
 
           const folderExists = files.some(
             (f) =>
-              f.path === currentPath &&
+              f.path === localCurrentPath &&
               f.name === args[0] &&
               f.type === "folder"
           );
@@ -440,7 +450,7 @@ export const Terminal = () => {
               id: uuidv4(),
               name: args[0],
               type: "folder" as const,
-              path: currentPath,
+              path: localCurrentPath,
               owner: currentUser.username,
               permissions: {
                 read: [currentUser.username],
@@ -460,7 +470,9 @@ export const Terminal = () => {
         if (args[0]) {
           const file = files.find(
             (f) =>
-              f.path === currentPath && f.name === args[0] && f.type === "file"
+              f.path === localCurrentPath &&
+              f.name === args[0] &&
+              f.type === "file"
           );
 
           if (!file) {
@@ -477,11 +489,11 @@ export const Terminal = () => {
 
       case "nano":
         if (args[0]) {
-          handleOpenFile();
+          handleOpenFile(args[0]);
         } else {
           output = "nano: missing file operand";
         }
-        break;
+        return;
 
       case "chmod":
         if (args.length < 2) {
@@ -494,9 +506,9 @@ export const Terminal = () => {
         const targetFile = args[1];
         const targetUser = args[2] || "*"; // Kullanıcı belirtilmezse herkes için işlem yap
 
-        // İzin değişikliği yapılacak dosyayı bul
+        // İzin değişikliği yapılacak dosyayı bul - yerel yolu kullan
         const fileToChange = files.find(
-          (f) => f.path === currentPath && f.name === targetFile
+          (f) => f.path === localCurrentPath && f.name === targetFile
         );
 
         if (!fileToChange) {
@@ -604,9 +616,9 @@ export const Terminal = () => {
           break;
         }
 
-        // Hedef dosyayı bul
+        // Hedef dosyayı bul - yerel yolu kullan
         const fileToChangeOwner = files.find(
-          (f) => f.path === currentPath && f.name === targetFileName
+          (f) => f.path === localCurrentPath && f.name === targetFileName
         );
 
         if (!fileToChangeOwner) {
@@ -744,7 +756,7 @@ whoami - Print current user
       {
         command,
         output,
-        path: currentPath,
+        path: localCurrentPath,
       },
     ]);
 
@@ -824,42 +836,55 @@ whoami - Print current user
     inputRef.current?.focus();
   };
 
-  const handleOpenFile = () => {
+  const handleOpenFile = (fileName: string) => {
+    // Önce dosyayı bul - yerel yolu kullan
+    const file = files.find(
+      (f) =>
+        f.path === localCurrentPath && f.name === fileName && f.type === "file"
+    );
+
+    if (!file) {
+      setCommands([
+        ...commands,
+        {
+          command: `nano ${fileName}`,
+          output: `nano: ${fileName}: No such file`,
+          path: localCurrentPath,
+        },
+      ]);
+      return;
+    }
+
+    if (!hasReadPermission(file, currentUser.username)) {
+      setCommands([
+        ...commands,
+        {
+          command: `nano ${fileName}`,
+          output: `nano: ${fileName}: Permission denied`,
+          path: localCurrentPath,
+        },
+      ]);
+      return;
+    }
+
     const size = { width: 800, height: 600 };
     const position = calculateCascadingPosition(size.width, size.height);
 
     addWindow({
       id: uuidv4(),
-      title: "Dosya Seç",
-      type: "file-manager",
+      title: `Nano - ${fileName}`,
+      type: "nano",
       position,
       size,
       isMinimized: false,
       isMaximized: false,
       zIndex: 1,
-      mode: "open", // Dosya açma modu
-    });
-  };
-
-  const handleSaveFile = () => {
-    const size = { width: 800, height: 600 };
-    const position = calculateCascadingPosition(size.width, size.height);
-
-    addWindow({
-      id: uuidv4(),
-      title: "Dosya Kaydet",
-      type: "file-manager",
-      position,
-      size,
-      isMinimized: false,
-      isMaximized: false,
-      zIndex: 1,
-      mode: "save", // Dosya kaydetme modu
+      fileId: file.id,
     });
   };
 
   // Terminal promptunu oluşturan yardımcı fonksiyon
-  const renderPrompt = (path: string = currentPath) => {
+  const renderPrompt = (path: string = localCurrentPath) => {
     const isAdmin = isUserAdmin(currentUser?.username);
     // Home dizinine kısaltma
     let displayPath = path;
@@ -919,7 +944,7 @@ whoami - Print current user
               <span className="text-blue-400">
                 {(() => {
                   const homePath = `/home/${currentUser.username}`;
-                  let displayPath = currentPath;
+                  let displayPath = localCurrentPath;
                   if (displayPath.startsWith(homePath)) {
                     displayPath = displayPath.replace(homePath, "~");
                   }
