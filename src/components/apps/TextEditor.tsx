@@ -43,7 +43,7 @@ export const TextEditorHeaderTools = () => {
 
       addWindow({
         id: uuidv4(),
-        title: "Metin Düzenleyici",
+        title: "Text Editor",
         type: "text-editor",
         position,
         size,
@@ -64,7 +64,7 @@ export const TextEditorHeaderTools = () => {
 
     addWindow({
       id: uuidv4(),
-      title: "Dosya Aç",
+      title: "Open File",
       type: "file-manager",
       position,
       size,
@@ -192,7 +192,7 @@ export const TextEditor = ({ initialFileId }: TextEditorProps) => {
   const createNewTab = () => {
     const newTab: Tab = {
       id: uuidv4(),
-      title: "Yeni Dosya",
+      title: "New File",
       content: "",
       isModified: false,
     };

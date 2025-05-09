@@ -4,10 +4,10 @@ import {
 } from "../utils/window";
 
 import { Button } from "./ui/button";
+import { getIconPath } from "../icons/iconPaths";
 import { useSettingsStore } from "../store/settingsStore";
 import { useWindowManagerStore } from "../store/windowManagerStore";
 import { v4 as uuidv4 } from "uuid";
-import { getIconPath } from "../icons/iconPaths";
 
 const DockButton = ({
   iconName,
@@ -72,7 +72,7 @@ export const DashToDock = () => {
 
     addWindow({
       id: uuidv4(),
-      title: "Metin Düzenleyici",
+      title: "Text Editor",
       type: "text-editor",
       position,
       size,
@@ -88,7 +88,7 @@ export const DashToDock = () => {
 
     addWindow({
       id: uuidv4(),
-      title: "Ayarlar",
+      title: "Settings",
       type: "settings",
       position,
       size,
@@ -108,17 +108,17 @@ export const DashToDock = () => {
       <DockButton
         onClick={handleFileManagerClick}
         iconName="file-manager"
-        title="Dosyalar"
+        title="Files"
       />
       <DockButton
         onClick={handleTextEditorClick}
         iconName="text-editor"
-        title="Metin Düzenleyici"
+        title="Text Editor"
       />
       <DockButton
         onClick={handleSettingsClick}
         iconName="preferences-system"
-        title="Ayarlar"
+        title="Settings"
       />
     </div>
   );

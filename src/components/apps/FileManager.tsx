@@ -208,14 +208,14 @@ export const FileManager = ({ mode, data }: FileManagerProps) => {
           className="mr-2"
           onClick={goToParentFolder}
         >
-          Üst Klasör
+          Parent Folder
         </Button>
         <Button
           variant="secondary"
           size="sm"
           onClick={() => setShowNewFolderDialog(true)}
         >
-          Yeni Klasör
+          New Folder
         </Button>
         <div className="ml-auto">{currentPath}</div>
       </div>
@@ -224,7 +224,7 @@ export const FileManager = ({ mode, data }: FileManagerProps) => {
       <div className="flex-1 p-2 overflow-auto">
         {currentItems.length === 0 ? (
           <div className="flex items-center justify-center h-full text-muted-foreground">
-            Bu klasör boş
+            This folder is empty
           </div>
         ) : (
           <div className="grid grid-cols-4 gap-2">
