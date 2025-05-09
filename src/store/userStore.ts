@@ -10,18 +10,26 @@ export interface User {
   createdAt: Date;
   lastLogin?: Date;
   avatar?: string;
+  isAdmin?: boolean; // Admin yetkisi
 }
 
 interface UserState {
   users: User[];
   currentUser: User | null;
   isAuthenticated: boolean;
-  addUser: (username: string, password: string, avatar?: string) => User;
+  addUser: (
+    username: string,
+    password: string,
+    avatar?: string,
+    isAdmin?: boolean
+  ) => User;
   removeUser: (id: string) => void;
   login: (username: string, password: string) => boolean;
   logout: () => void;
   updateUser: (id: string, updates: Partial<User>) => void;
   initializeSystem: () => void;
+  isUserAdmin: (username: string) => boolean;
+  setAdminStatus: (username: string, isAdmin: boolean) => void;
 }
 
 // Varsayılan kullanıcıları oluşturan fonksiyon
@@ -32,12 +40,14 @@ const createDefaultUsers = (): User[] => {
       username: "haci",
       password: "password", // Gerçek uygulamada hash kullanın
       createdAt: new Date(),
+      isAdmin: true, // haci kullanıcısına admin yetkisi verildi
     },
     {
       id: uuidv4(),
       username: "misafir",
       password: "guest", // Gerçek uygulamada hash kullanın
       createdAt: new Date(),
+      isAdmin: false,
     },
   ];
 };
@@ -60,6 +70,26 @@ export const useUserStore = create<UserState>()(
       currentUser: null,
       isAuthenticated: false,
 
+      // Kullanıcı admin mi?
+      isUserAdmin: (username: string) => {
+        const user = get().users.find((u) => u.username === username);
+        return user?.isAdmin === true;
+      },
+
+      // Kullanıcıya admin yetkisi ver/al
+      setAdminStatus: (username: string, isAdmin: boolean) => {
+        set((state) => ({
+          users: state.users.map((user) =>
+            user.username === username ? { ...user, isAdmin } : user
+          ),
+          // Eğer aktif kullanıcıysa onu da güncelle
+          currentUser:
+            state.currentUser?.username === username
+              ? { ...state.currentUser, isAdmin }
+              : state.currentUser,
+        }));
+      },
+
       // Sistem başlatma (varsayılan kullanıcılar için dosya sistemi oluşturma)
       initializeSystem: () => {
         const { users } = get();
@@ -79,7 +109,12 @@ export const useUserStore = create<UserState>()(
       },
 
       // Yeni kullanıcı ekleme
-      addUser: (username: string, password: string, avatar?: string) => {
+      addUser: (
+        username: string,
+        password: string,
+        avatar?: string,
+        isAdmin: boolean = false
+      ) => {
         // Kullanıcı adı kontrolü
         const existingUser = get().users.find(
           (user) => user.username === username
@@ -94,6 +129,7 @@ export const useUserStore = create<UserState>()(
           password,
           createdAt: new Date(),
           avatar,
+          isAdmin,
         };
 
         set((state) => ({

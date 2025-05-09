@@ -12,6 +12,7 @@ import { v4 as uuidv4 } from "uuid";
 interface Command {
   command: string;
   output: string;
+  path: string;
 }
 
 interface FileContent {
@@ -27,19 +28,30 @@ export const Terminal = () => {
   const [commandHistory, setCommandHistory] = useState<string[]>([]);
   const [historyIndex, setHistoryIndex] = useState(-1);
   const [selectedSuggestionIndex, setSelectedSuggestionIndex] = useState(0);
+  const [sudoMode, setSudoMode] = useState(false);
+  const [sudoCommand, setSudoCommand] = useState("");
+  const [sudoPassword, setSudoPassword] = useState("");
 
   const {
     files,
     currentPath,
     setCurrentPath,
     addFile,
+    updateFile,
     getUserAccessibleFiles,
     hasReadPermission,
     hasWritePermission,
     hasExecutePermission,
   } = useFileManagerStore();
 
-  const { currentUser } = useUserStore();
+  const {
+    currentUser,
+    users,
+    isUserAdmin,
+    setAdminStatus,
+    addUser: addUserToSystem,
+  } = useUserStore();
+
   const { addWindow } = useWindowManagerStore();
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -74,6 +86,12 @@ export const Terminal = () => {
       "cat",
       "nano",
       "help",
+      "chmod",
+      "chown",
+      "sudo",
+      "useradd",
+      "usermod",
+      "whoami",
     ];
   };
 
@@ -84,9 +102,14 @@ export const Terminal = () => {
     );
   };
 
+  const getUsernames = () => {
+    return users.map((user) => user.username);
+  };
+
   const findSuggestions = (partialCommand: string) => {
     const parts = partialCommand.trim().split(" ");
     const lastWord = parts[parts.length - 1];
+    const command = parts[0];
 
     if (parts.length === 1) {
       // Komut tamamlama
@@ -95,9 +118,17 @@ export const Terminal = () => {
       );
       return commandSuggestions;
     } else {
-      // Dosya/dizin tamamlama
-      const filesDirs = getFilesAndDirsInCurrentPath();
-      return filesDirs.filter((item) => item.startsWith(lastWord));
+      // Dosya/dizin tamamlama (genel durum)
+      if (command === "chown" && parts.length === 2) {
+        // chown için kullanıcı adları öner
+        return getUsernames().filter((username) =>
+          username.startsWith(lastWord)
+        );
+      } else {
+        // Diğer komutlar için dosya/dizin adları öner
+        const filesDirs = getFilesAndDirsInCurrentPath();
+        return filesDirs.filter((item) => item.startsWith(lastWord));
+      }
     }
   };
 
@@ -148,7 +179,31 @@ export const Terminal = () => {
     inputRef.current?.focus();
   };
 
-  const executeCommand = (command: string) => {
+  const executeSudoCommand = (password: string) => {
+    // Şifre kontrolü
+    if (password !== currentUser.password) {
+      setCommands([
+        ...commands,
+        {
+          command: "sudo " + sudoCommand,
+          output: "sudo: incorrect password",
+          path: currentPath,
+        },
+      ]);
+      setSudoMode(false);
+      setSudoCommand("");
+      setSudoPassword("");
+      return;
+    }
+
+    // Sudo komutu çalıştır
+    executeCommand(sudoCommand, true);
+    setSudoMode(false);
+    setSudoCommand("");
+    setSudoPassword("");
+  };
+
+  const executeCommand = (command: string, isSudo: boolean = false) => {
     const [cmd, ...args] = command.trim().split(" ");
 
     // Komut geçmişine ekle
@@ -156,6 +211,10 @@ export const Terminal = () => {
     setHistoryIndex(-1);
 
     let output = "";
+    let newPath = currentPath;
+
+    // Admin yetkisi olmayan kullanıcıların yetkili işlemleri için sudo kontrolü
+    const isAdmin = isSudo || isUserAdmin(currentUser.username);
 
     switch (cmd) {
       case "ls":
@@ -186,16 +245,16 @@ export const Terminal = () => {
       case "cd":
         if (args[0]) {
           let targetPath = args[0];
-          let newPath = "";
+          let nextPath = "";
 
           // Mutlak yol mu?
           if (targetPath.startsWith("/")) {
-            newPath = targetPath;
+            nextPath = targetPath;
           }
           // Kısayol: ~ ile başlıyorsa kullanıcının ev dizinine git
           else if (targetPath === "~" || targetPath.startsWith("~/")) {
             const homePath = `/home/${currentUser.username}`;
-            newPath =
+            nextPath =
               targetPath === "~"
                 ? homePath
                 : `${homePath}/${targetPath.substring(2)}`;
@@ -204,20 +263,20 @@ export const Terminal = () => {
           else if (targetPath === "..") {
             const parentPath =
               currentPath.split("/").slice(0, -1).join("/") || "/";
-            newPath = parentPath;
+            nextPath = parentPath;
           }
           // Nispi yol
           else {
-            newPath = `${currentPath}/${targetPath}`.replace(/\/+/g, "/");
+            nextPath = `${currentPath}/${targetPath}`.replace(/\/+/g, "/");
           }
 
           // Yol kontrolü ve normalize
-          newPath = newPath.replace(/\/+/g, "/");
-          if (newPath === "") newPath = "/";
+          nextPath = nextPath.replace(/\/+/g, "/");
+          if (nextPath === "") nextPath = "/";
 
           // Hedef yolun varlığını kontrol et
           // Önce "/" ile başlayan yol bileşenlerini ayır
-          const pathParts = newPath.split("/").filter((part) => part !== "");
+          const pathParts = nextPath.split("/").filter((part) => part !== "");
           let currentPathCheck = "/";
           let targetExists = true;
           let permissionExists = true;
@@ -287,12 +346,14 @@ export const Terminal = () => {
           } else if (!permissionExists) {
             output = `cd: ${targetPath}: Permission denied`;
           } else {
-            setCurrentPath(newPath);
-            output = `Changed directory to ${newPath}`;
+            newPath = nextPath;
+            setCurrentPath(nextPath);
+            output = `Changed directory to ${nextPath}`;
           }
         } else {
           // Argüman verilmemişse ev dizinine git
           const homePath = `/home/${currentUser.username}`;
+          newPath = homePath;
           setCurrentPath(homePath);
           output = `Changed directory to ${homePath}`;
         }
@@ -422,33 +483,284 @@ export const Terminal = () => {
         }
         break;
 
+      case "chmod":
+        if (args.length < 2) {
+          output =
+            "chmod: missing operand\nTry 'chmod [+/-][r/w/x] [target] [user]'";
+          break;
+        }
+
+        const modeStr = args[0];
+        const targetFile = args[1];
+        const targetUser = args[2] || "*"; // Kullanıcı belirtilmezse herkes için işlem yap
+
+        // İzin değişikliği yapılacak dosyayı bul
+        const fileToChange = files.find(
+          (f) => f.path === currentPath && f.name === targetFile
+        );
+
+        if (!fileToChange) {
+          output = `chmod: cannot access '${targetFile}': No such file or directory`;
+          break;
+        }
+
+        // Dosya sahibi veya admin değilse yetkiyi reddet
+        if (fileToChange.owner !== currentUser.username && !isAdmin) {
+          output = `chmod: changing permissions of '${targetFile}': Operation not permitted`;
+          break;
+        }
+
+        // İzinleri ayarla
+        if (!fileToChange.permissions) {
+          fileToChange.permissions = {
+            read: [],
+            write: [],
+            execute: [],
+          };
+        }
+
+        const operation = modeStr[0]; // + veya -
+        const permission = modeStr.slice(1); // r, w, x
+
+        if (
+          !["+", "-"].includes(operation) ||
+          !["r", "w", "x"].includes(permission)
+        ) {
+          output = `chmod: invalid mode: '${modeStr}'`;
+          break;
+        }
+
+        let permissionsUpdated = false;
+
+        if (permission === "r") {
+          if (operation === "+") {
+            // İzin ekle
+            if (!fileToChange.permissions.read.includes(targetUser)) {
+              fileToChange.permissions.read.push(targetUser);
+              permissionsUpdated = true;
+            }
+          } else {
+            // İzin kaldır
+            fileToChange.permissions.read =
+              fileToChange.permissions.read.filter(
+                (user) => user !== targetUser
+              );
+            permissionsUpdated = true;
+          }
+        } else if (permission === "w") {
+          if (operation === "+") {
+            if (!fileToChange.permissions.write.includes(targetUser)) {
+              fileToChange.permissions.write.push(targetUser);
+              permissionsUpdated = true;
+            }
+          } else {
+            fileToChange.permissions.write =
+              fileToChange.permissions.write.filter(
+                (user) => user !== targetUser
+              );
+            permissionsUpdated = true;
+          }
+        } else if (permission === "x") {
+          if (operation === "+") {
+            if (!fileToChange.permissions.execute.includes(targetUser)) {
+              fileToChange.permissions.execute.push(targetUser);
+              permissionsUpdated = true;
+            }
+          } else {
+            fileToChange.permissions.execute =
+              fileToChange.permissions.execute.filter(
+                (user) => user !== targetUser
+              );
+            permissionsUpdated = true;
+          }
+        }
+
+        if (permissionsUpdated) {
+          // Dosya izinlerini güncelle
+          updateFile(fileToChange.id, {
+            permissions: fileToChange.permissions,
+          });
+          output = `Changed permissions of '${targetFile}' for user '${
+            targetUser === "*" ? "all users" : targetUser
+          }'`;
+        } else {
+          output = `Permissions already set for '${targetFile}'`;
+        }
+        break;
+
+      case "chown":
+        if (args.length < 2) {
+          output = "chown: missing operand\nTry 'chown user file'";
+          break;
+        }
+
+        const newOwner = args[0];
+        const targetFileName = args[1];
+
+        // Kullanıcı var mı kontrol et
+        const userExists = users.some((user) => user.username === newOwner);
+        if (!userExists) {
+          output = `chown: invalid user: '${newOwner}'`;
+          break;
+        }
+
+        // Hedef dosyayı bul
+        const fileToChangeOwner = files.find(
+          (f) => f.path === currentPath && f.name === targetFileName
+        );
+
+        if (!fileToChangeOwner) {
+          output = `chown: cannot access '${targetFileName}': No such file or directory`;
+          break;
+        }
+
+        // Sadece dosya sahibi veya admin sahipliği değiştirebilir
+        if (fileToChangeOwner.owner !== currentUser.username && !isAdmin) {
+          output = `chown: changing ownership of '${targetFileName}': Operation not permitted`;
+          break;
+        }
+
+        // Sahipliği değiştir
+        updateFile(fileToChangeOwner.id, { owner: newOwner });
+        output = `Changed owner of '${targetFileName}' from '${
+          fileToChangeOwner.owner || "root"
+        }' to '${newOwner}'`;
+        break;
+
       case "help":
         output = `Available commands:
-ls - List directory contents
-cd - Change directory
-pwd - Print working directory
+  ls - List directory contents
+  cd - Change directory
+ pwd - Print working directory
 touch - Create empty file
 mkdir - Create directory
 clear - Clear terminal
-cat - Display file content
-nano - Edit file
-help - Display this help`;
+  cat - Display file content
+ nano - Edit file
+chmod - Change file permissions (+/-[r/w/x] file [user])
+chown - Change file owner (user file)
+ sudo - Execute command as root
+useradd - Add a new user (admin only)
+usermod - Modify user permissions (admin only)
+whoami - Print current user
+ help - Display this help`;
         break;
 
       case "clear":
         setCommands([]);
         return;
 
+      case "sudo":
+        if (args.length === 0) {
+          output = "sudo: a command is required";
+          break;
+        }
+
+        // Zaten admin ise direkt çalıştır
+        if (isUserAdmin(currentUser.username)) {
+          executeCommand(args.join(" "), true);
+          return;
+        }
+
+        // Sudo moduna geç ve şifre iste
+        setSudoMode(true);
+        setSudoCommand(args.join(" "));
+        return;
+
+      case "useradd":
+        if (!isAdmin) {
+          output = "useradd: Permission denied";
+          break;
+        }
+
+        if (args.length < 2) {
+          output =
+            "useradd: missing username and password\nTry 'useradd username password'";
+          break;
+        }
+
+        const newUsername = args[0];
+        const newPassword = args[1];
+        const makeAdmin = args.includes("--admin");
+
+        try {
+          // Yeni kullanıcı oluştur
+          addUserToSystem(newUsername, newPassword, undefined, makeAdmin);
+          output = `User '${newUsername}' created successfully${
+            makeAdmin ? " with admin privileges" : ""
+          }`;
+        } catch (error: any) {
+          output = `useradd: ${error.message}`;
+        }
+        break;
+
+      case "usermod":
+        if (!isAdmin) {
+          output = "usermod: Permission denied";
+          break;
+        }
+
+        if (args.length < 2) {
+          output =
+            "usermod: missing option and username\nTry 'usermod --admin username'";
+          break;
+        }
+
+        const modOption = args[0];
+        const modUsername = args[1];
+
+        if (modOption !== "--admin" && modOption !== "--remove-admin") {
+          output = `usermod: invalid option '${modOption}'`;
+          break;
+        }
+
+        const modTargetUser = users.find((u) => u.username === modUsername);
+        if (!modTargetUser) {
+          output = `usermod: user '${modUsername}' does not exist`;
+          break;
+        }
+
+        // Admin yetkisi ekle veya kaldır
+        setAdminStatus(modUsername, modOption === "--admin");
+        output = `User '${modUsername}' ${
+          modOption === "--admin" ? "granted" : "removed"
+        } admin privileges`;
+        break;
+
+      case "whoami":
+        output = currentUser.username;
+        if (isUserAdmin(currentUser.username)) {
+          output += " (admin)";
+        }
+        break;
+
       default:
         output = `${cmd}: command not found`;
     }
 
-    setCommands([...commands, { command, output }]);
+    // Yeni komutu ekle, çalıştırıldığı dizini de sakla
+    setCommands([
+      ...commands,
+      {
+        command,
+        output,
+        path: currentPath,
+      },
+    ]);
+
     setCurrentCommand("");
     setShowSuggestions(false);
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    // Sudo modundayken şifre girişi
+    if (sudoMode) {
+      if (e.key === "Enter") {
+        executeSudoCommand(sudoPassword);
+      }
+      return;
+    }
+
     if (e.key === "Enter") {
       if (showSuggestions) {
         selectCurrentSuggestion();
@@ -546,12 +858,51 @@ help - Display this help`;
     });
   };
 
+  // Terminal promptunu oluşturan yardımcı fonksiyon
+  const renderPrompt = (path: string = currentPath) => {
+    const isAdmin = isUserAdmin(currentUser?.username);
+    // Home dizinine kısaltma
+    let displayPath = path;
+    const homePath = `/home/${currentUser.username}`;
+
+    if (path.startsWith(homePath)) {
+      // /home/username dizinini ~ ile değiştir
+      displayPath = path.replace(homePath, "~");
+    }
+
+    return (
+      <span className="text-[#f7768e]">
+        <span className="text-green-400">{currentUser.username}</span>
+        <span className="text-white">:</span>
+        <span className="text-blue-400">{displayPath}</span>
+        <span>{isAdmin ? "# " : "$ "}</span>
+      </span>
+    );
+  };
+
   return (
     <div className="bg-[#1a1b26] text-[#a9b1d6] font-mono p-4 h-full overflow-auto">
       {commands.map((cmd, index) => (
         <div key={index} className="mb-2">
           <div className="flex">
-            <span className="text-[#f7768e]">$</span>
+            <span className="text-[#f7768e]">
+              <span className="text-green-400">{currentUser.username}</span>
+              <span className="text-white">:</span>
+              <span className="text-blue-400">
+                {(() => {
+                  const homePath = `/home/${currentUser.username}`;
+                  let displayPath = cmd.path || "/";
+
+                  // Home dizinini ~ ile göster
+                  if (displayPath.startsWith(homePath)) {
+                    displayPath = displayPath.replace(homePath, "~");
+                  }
+
+                  return displayPath;
+                })()}
+              </span>
+              {isUserAdmin(currentUser.username) ? "# " : "$ "}
+            </span>
             <span className="ml-2">{cmd.command}</span>
           </div>
           {cmd.output && (
@@ -560,21 +911,52 @@ help - Display this help`;
         </div>
       ))}
       <div className="flex relative">
-        <span className="text-[#f7768e]">$</span>
-        <input
-          ref={inputRef}
-          type="text"
-          value={currentCommand}
-          onChange={(e) => {
-            setCurrentCommand(e.target.value);
-            setShowSuggestions(false);
-          }}
-          onKeyDown={handleKeyDown}
-          className="bg-transparent border-none outline-none ml-2 flex-1 text-[#a9b1d6]"
-          spellCheck={false}
-        />
+        {sudoMode ? (
+          <>
+            <span className="text-[#f7768e]">
+              <span className="text-green-400">{currentUser.username}</span>
+              <span className="text-white">:</span>
+              <span className="text-blue-400">
+                {(() => {
+                  const homePath = `/home/${currentUser.username}`;
+                  let displayPath = currentPath;
+                  if (displayPath.startsWith(homePath)) {
+                    displayPath = displayPath.replace(homePath, "~");
+                  }
+                  return displayPath;
+                })()}
+              </span>
+              {"# "}
+            </span>
+            <input
+              type="password"
+              value={sudoPassword}
+              onChange={(e) => setSudoPassword(e.target.value)}
+              onKeyDown={handleKeyDown}
+              placeholder="[sudo] password for current user:"
+              className="bg-transparent border-none outline-none ml-2 flex-1 text-[#a9b1d6]"
+              autoFocus
+            />
+          </>
+        ) : (
+          <>
+            {renderPrompt()}
+            <input
+              ref={inputRef}
+              type="text"
+              value={currentCommand}
+              onChange={(e) => {
+                setCurrentCommand(e.target.value);
+                setShowSuggestions(false);
+              }}
+              onKeyDown={handleKeyDown}
+              className="bg-transparent border-none outline-none ml-2 flex-1 text-[#a9b1d6]"
+              spellCheck={false}
+            />
+          </>
+        )}
 
-        {showSuggestions && suggestions.length > 0 && (
+        {showSuggestions && suggestions.length > 0 && !sudoMode && (
           <div className="absolute left-0 top-full mt-1 bg-[#24283b] border border-[#414868] rounded-md overflow-hidden shadow-lg z-10">
             {suggestions.map((suggestion, idx) => (
               <div
