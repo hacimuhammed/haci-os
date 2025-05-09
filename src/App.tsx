@@ -2,6 +2,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { TextEditor, TextEditorHeaderTools } from "./components/TextEditor";
 import { useEffect, useRef, useState } from "react";
 
+import { AnimationPreview } from "./components/AnimationPreview";
 import { DashToDock } from "./components/DashToDock";
 import { Desktop } from "./components/Desktop";
 import { FileManager } from "./components/FileManager";
@@ -229,7 +230,26 @@ function App() {
     snapWindowToLeft,
     snapWindowToRight,
   } = useWindowManagerStore();
-  const { currentTheme } = useThemeStore();
+  const { currentTheme, setTheme } = useThemeStore();
+
+  // Tema başlatma
+  useEffect(() => {
+    // Kullanıcı tercihini yerel depolamadan kontrolü
+    const savedTheme = localStorage.getItem("theme");
+    if (savedTheme) {
+      setTheme(savedTheme);
+    } else {
+      // Sistem tercihini kontrol et
+      if (
+        window.matchMedia &&
+        window.matchMedia("(prefers-color-scheme: dark)").matches
+      ) {
+        setTheme("dark");
+      } else {
+        setTheme("light");
+      }
+    }
+  }, [setTheme]);
 
   // Alt tuşu basılı mı?
   const isAltKeyPressed = useRef(false);
@@ -365,6 +385,8 @@ function App() {
         return <TextEditor initialFileId={window.fileId} />;
       case "settings":
         return <SettingsPanel />;
+      case "animation-preview":
+        return <AnimationPreview />;
       default:
         return null;
     }
@@ -380,13 +402,7 @@ function App() {
   };
 
   return (
-    <div
-      className="w-screen h-screen overflow-hidden flex flex-col"
-      style={{
-        backgroundColor: currentTheme.colors.background,
-        color: currentTheme.colors.text,
-      }}
-    >
+    <div className="w-screen h-screen overflow-hidden flex flex-col bg-background text-foreground">
       <Topbar />
       <div className="flex-1 relative">
         <Desktop />

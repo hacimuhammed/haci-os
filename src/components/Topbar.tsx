@@ -30,7 +30,7 @@ export const Topbar = () => {
   };
 
   return (
-    <div className="bg-zinc-900 h-14 py-3 bg-opacity-90 backdrop-blur-sm flex items-center justify-between px-4 relative">
+    <div className="bg-background h-14 py-3 bg-opacity-90 backdrop-blur-sm flex items-center justify-between px-4 relative">
       <div>{/* Logo veya başlangıç menüsü burada olabilir */}</div>
 
       <div className="flex items-center space-x-4">
@@ -39,7 +39,7 @@ export const Topbar = () => {
       </div>
 
       {showSettings && (
-        <div className="absolute top-full right-4 mt-2 bg-gray-800 rounded-lg shadow-lg overflow-hidden z-50">
+        <div className="absolute top-full right-4 mt-2 bg-card rounded-lg shadow-lg overflow-hidden z-50">
           <ThemeSelector />
         </div>
       )}

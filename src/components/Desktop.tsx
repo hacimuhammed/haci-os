@@ -1,15 +1,18 @@
-import { calculateCenterPosition } from "../utils/window";
+import {
+  calculateCascadingPosition,
+  calculateCenterPosition,
+} from "../utils/window";
+
+import { Button } from "./ui/button";
 import { useFileManagerStore } from "../store/fileManagerStore";
 import { useSettingsStore } from "../store/settingsStore";
 import { useState } from "react";
-import { useThemeStore } from "../store/themeStore";
 import { useWindowManagerStore } from "../store/windowManagerStore";
 import { v4 as uuidv4 } from "uuid";
 
 export const Desktop = () => {
   const { files, addFile } = useFileManagerStore();
   const { addWindow } = useWindowManagerStore();
-  const { currentTheme } = useThemeStore();
   const { appearance } = useSettingsStore();
   const [contextMenu, setContextMenu] = useState<{
     x: number;
@@ -39,7 +42,7 @@ export const Desktop = () => {
 
     if (file.type === "folder") {
       const size = { width: 800, height: 600 };
-      const position = calculateCenterPosition(size.width, size.height);
+      const position = calculateCascadingPosition(size.width, size.height);
 
       addWindow({
         id: uuidv4(),
@@ -94,11 +97,11 @@ export const Desktop = () => {
                   }
                 }}
                 autoFocus
-                className="mt-2 text-white bg-transparent border-b border-gray-600 focus:outline-none focus:border-blue-500"
+                className="mt-2 text-foreground bg-transparent border-b border-input focus:outline-none focus:border-ring"
               />
             ) : (
               <span
-                className="mt-2 text-white text-sm"
+                className="mt-2 text-foreground text-sm"
                 onDoubleClick={() => setEditingFile(file.id)}
               >
                 {file.name}
@@ -110,15 +113,16 @@ export const Desktop = () => {
 
       {contextMenu && (
         <div
-          className="fixed rounded-lg shadow-lg bg-zinc-900 p-1.5"
+          className="fixed rounded-lg shadow-lg bg-popover p-1.5"
           style={{ left: contextMenu.x, top: contextMenu.y }}
         >
-          <button
-            className="w-full px-4 py-2 text-left hover:bg-gray-100"
+          <Button
+            variant="ghost"
+            className="w-full px-4 py-2 text-left justify-start hover:bg-muted text-popover-foreground"
             onClick={handleNewFolder}
           >
             New Folder
-          </button>
+          </Button>
         </div>
       )}
     </div>

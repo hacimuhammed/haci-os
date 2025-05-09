@@ -1,6 +1,9 @@
+import {
+  calculateCascadingPosition,
+  calculateCenterPosition,
+} from "../utils/window";
 import { useEffect, useRef, useState } from "react";
 
-import { calculateCenterPosition } from "../utils/window";
 import { useFileManagerStore } from "../store/fileManagerStore";
 import { useWindowManagerStore } from "../store/windowManagerStore";
 import { v4 as uuidv4 } from "uuid";
@@ -255,7 +258,10 @@ export const Terminal = () => {
           if (file) {
             // Pencere oluştur
             const size = { width: 800, height: 600 };
-            const position = calculateCenterPosition(size.width, size.height);
+            const position = calculateCascadingPosition(
+              size.width,
+              size.height
+            );
 
             addWindow({
               id: uuidv4(),
@@ -283,7 +289,10 @@ export const Terminal = () => {
 
             // Pencere oluştur
             const size = { width: 800, height: 600 };
-            const position = calculateCenterPosition(size.width, size.height);
+            const position = calculateCascadingPosition(
+              size.width,
+              size.height
+            );
 
             addWindow({
               id: uuidv4(),
@@ -395,6 +404,40 @@ export const Terminal = () => {
     }
     setShowSuggestions(false);
     inputRef.current?.focus();
+  };
+
+  const handleOpenFile = () => {
+    const size = { width: 800, height: 600 };
+    const position = calculateCascadingPosition(size.width, size.height);
+
+    addWindow({
+      id: uuidv4(),
+      title: "Dosya Seç",
+      type: "file-manager",
+      position,
+      size,
+      isMinimized: false,
+      isMaximized: false,
+      zIndex: 1,
+      mode: "open", // Dosya açma modu
+    });
+  };
+
+  const handleSaveFile = () => {
+    const size = { width: 800, height: 600 };
+    const position = calculateCascadingPosition(size.width, size.height);
+
+    addWindow({
+      id: uuidv4(),
+      title: "Dosya Kaydet",
+      type: "file-manager",
+      position,
+      size,
+      isMinimized: false,
+      isMaximized: false,
+      zIndex: 1,
+      mode: "save", // Dosya kaydetme modu
+    });
   };
 
   return (

@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 
+import { Button } from "./ui/button";
 import { useFileManagerStore } from "../store/fileManagerStore";
 import { v4 as uuidv4 } from "uuid";
 
@@ -116,28 +117,31 @@ export const FileManager = ({ mode, data }: FileManagerProps) => {
   const currentItems = files.filter((file) => file.path === currentPath);
 
   return (
-    <div className="h-full flex flex-col bg-gray-800 text-white">
+    <div className="h-full flex flex-col bg-background text-foreground">
       {/* Toolbar */}
-      <div className="p-2 flex items-center border-b border-gray-700">
-        <button
-          className="px-2 py-1 rounded hover:bg-gray-700 mr-2"
+      <div className="p-2 flex items-center border-b border-border">
+        <Button
+          variant="secondary"
+          size="sm"
+          className="mr-2"
           onClick={goToParentFolder}
         >
           Üst Klasör
-        </button>
-        <button
-          className="px-2 py-1 rounded hover:bg-gray-700"
+        </Button>
+        <Button
+          variant="secondary"
+          size="sm"
           onClick={() => setShowNewFolderDialog(true)}
         >
           Yeni Klasör
-        </button>
+        </Button>
         <div className="ml-auto">{currentPath}</div>
       </div>
 
       {/* Ana içerik */}
       <div className="flex-1 p-2 overflow-auto">
         {currentItems.length === 0 ? (
-          <div className="flex items-center justify-center h-full text-gray-400">
+          <div className="flex items-center justify-center h-full text-muted-foreground">
             Bu klasör boş
           </div>
         ) : (
@@ -147,8 +151,8 @@ export const FileManager = ({ mode, data }: FileManagerProps) => {
                 key={file.id}
                 className={`p-2 rounded cursor-pointer flex flex-col items-center ${
                   selectedFileId === file.id
-                    ? "bg-blue-800"
-                    : "hover:bg-gray-700"
+                    ? "bg-primary text-primary-foreground"
+                    : "hover:bg-muted"
                 }`}
                 onClick={() => handleFileClick(file.id)}
                 onDoubleClick={() => handleFileDoubleClick(file.id)}
@@ -160,7 +164,7 @@ export const FileManager = ({ mode, data }: FileManagerProps) => {
                 {isRenaming === file.id ? (
                   <input
                     type="text"
-                    className="w-full bg-gray-700 px-2 py-1 mt-2 rounded"
+                    className="w-full bg-input border border-input px-2 py-1 mt-2 rounded"
                     value={newName}
                     onChange={(e) => setNewName(e.target.value)}
                     onBlur={finishRenaming}
@@ -188,12 +192,12 @@ export const FileManager = ({ mode, data }: FileManagerProps) => {
 
       {/* Klasör oluşturma diyaloğu */}
       {showNewFolderDialog && (
-        <div className="p-3 bg-gray-900 border-t border-gray-700">
+        <div className="p-3 bg-card border-t border-border">
           <div className="text-sm mb-2">Yeni klasör adı:</div>
           <div className="flex">
             <input
               type="text"
-              className="flex-1 bg-gray-800 border border-gray-600 px-2 py-1 rounded-l"
+              className="flex-1 bg-input border border-input px-2 py-1 rounded-l"
               value={newFolderName}
               onChange={(e) => setNewFolderName(e.target.value)}
               autoFocus
@@ -202,30 +206,32 @@ export const FileManager = ({ mode, data }: FileManagerProps) => {
                 if (e.key === "Escape") setShowNewFolderDialog(false);
               }}
             />
-            <button
-              className="px-3 py-1 bg-blue-600 hover:bg-blue-700 rounded-r"
+            <Button
+              variant="default"
+              className="px-3 py-1 rounded-none rounded-r"
               onClick={createNewFolder}
             >
               Oluştur
-            </button>
-            <button
-              className="px-3 py-1 ml-2 bg-gray-700 hover:bg-gray-600 rounded"
+            </Button>
+            <Button
+              variant="secondary"
+              className="px-3 py-1 ml-2"
               onClick={() => setShowNewFolderDialog(false)}
             >
               İptal
-            </button>
+            </Button>
           </div>
         </div>
       )}
 
       {/* Kaydetme paneli */}
       {mode === "save" && (
-        <div className="p-3 bg-gray-900 border-t border-gray-700">
+        <div className="p-3 bg-card border-t border-border">
           <div className="text-sm mb-2">Dosya adı:</div>
           <div className="flex">
             <input
               type="text"
-              className="flex-1 bg-gray-800 border border-gray-600 px-2 py-1 rounded-l"
+              className="flex-1 bg-input border border-input px-2 py-1 rounded-l"
               value={saveFileName}
               onChange={(e) => setSaveFileName(e.target.value)}
               autoFocus
@@ -233,21 +239,22 @@ export const FileManager = ({ mode, data }: FileManagerProps) => {
                 if (e.key === "Enter") saveFile();
               }}
             />
-            <button
-              className="px-3 py-1 bg-blue-600 hover:bg-blue-700 rounded-r"
+            <Button
+              variant="default"
+              className="px-3 py-1 rounded-none rounded-r"
               onClick={saveFile}
             >
               Kaydet
-            </button>
+            </Button>
           </div>
         </div>
       )}
 
       {/* Seçim onay paneli */}
       {mode === "open" && selectedFileId && (
-        <div className="p-3 bg-gray-900 border-t border-gray-700 flex justify-end">
-          <button
-            className="px-3 py-1 bg-blue-600 hover:bg-blue-700 rounded"
+        <div className="p-3 bg-card border-t border-border flex justify-end">
+          <Button
+            variant="default"
             onClick={() => {
               const file = files.find((f) => f.id === selectedFileId);
               if (file && file.type === "file" && data?.onOpen) {
@@ -256,7 +263,7 @@ export const FileManager = ({ mode, data }: FileManagerProps) => {
             }}
           >
             Aç
-          </button>
+          </Button>
         </div>
       )}
     </div>

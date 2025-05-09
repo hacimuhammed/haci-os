@@ -1,0 +1,22 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+# Açıklama
+Uygulamanın çalışması için yapılması gereken güncellemeleri içeren mark down listesi.
+
+# Kullanım klavuzu
+[x] ile başlayan satırlar bitmiş todoları,
+[ ] ile başlayan satırlar henüz başlanmamış satırları belirtiyor.
+
+# Todo List
+
+## Window Manager
+[ ] [Window.tsx](mdc:src/components/Window.tsx) yeniden boyutlandırma işlemi şuan sadece sağ alt'dan çalışyıor, pencerenin sol üst, sağ üst, sağ alt, sol alt'dan da yeniden boyutlandırılabilir olmalı.
+
+## Settings App
+[ ] [SettingsPanel.tsx](mdc:src/components/SettingsPanel.tsx) sayfadaki shadcn select bileşeni yerine düz html selecti kullanılmalı.
+
+## Dash To Dock
+[ ] [DashToDock.tsx](mdc:src/components/DashToDock.tsx) burada icon kullanma yöntemi değişmeli, /icons/${iconPack}/terminal.svg iconlar bu şekilde değil, bir sayfada, bir array içerisinde key'i icon paketi ismi olan, içerisinde uygulama iconlarına karşılık gelen tüm yollar olan bir yapıda olmalı.

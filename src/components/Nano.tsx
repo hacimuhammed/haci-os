@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 
+import { Button } from "./ui/button";
 import { useFileManagerStore } from "../store/fileManagerStore";
 import { useWindowManagerStore } from "../store/windowManagerStore";
 
@@ -118,10 +119,10 @@ export const Nano = ({ fileId }: NanoProps) => {
 
   return (
     <div className="h-full flex flex-col bg-black text-green-400 font-mono">
-      <div className="bg-gray-800 text-white px-4 py-2 flex justify-between items-center">
+      <div className="bg-card text-card-foreground px-4 py-2 flex justify-between items-center">
         <div className="flex items-center">
           <span className="mr-2">GNU nano</span>
-          <span className="text-gray-400">{fileName}</span>
+          <span className="text-muted-foreground">{fileName}</span>
           {!isSaved && (
             <span className="ml-2 text-yellow-400">(değiştirildi)</span>
           )}
@@ -136,31 +137,34 @@ export const Nano = ({ fileId }: NanoProps) => {
         className="flex-1 bg-black text-green-400 p-4 resize-none outline-none font-mono min-h-0"
         spellCheck={false}
       />
-      <div className="bg-gray-800 text-white px-4 py-2 flex justify-between sticky bottom-0 left-0 right-0">
+      <div className="bg-card text-card-foreground px-4 py-2 flex justify-between sticky bottom-0 left-0 right-0">
         <div className="flex space-x-4">
-          <button
-            className="hover:bg-gray-700 px-2 rounded"
+          <Button
+            variant="ghost"
+            className="hover:bg-muted px-2"
             onClick={handleSave}
           >
             ^S Kaydet
-          </button>
-          <button
-            className="hover:bg-gray-700 px-2 rounded"
+          </Button>
+          <Button
+            variant="ghost"
+            className="hover:bg-muted px-2"
             onClick={handleExit}
           >
             ^G Çık
-          </button>
-          <button
-            className="hover:bg-gray-700 px-2 rounded"
+          </Button>
+          <Button
+            variant="ghost"
+            className="hover:bg-muted px-2"
             onClick={() => {
               setStatusMessage("İşlem iptal edildi");
               setTimeout(() => setStatusMessage(""), 2000);
             }}
           >
             ^X İptal
-          </button>
+          </Button>
         </div>
-        <div className="text-sm text-gray-400">
+        <div className="text-sm text-muted-foreground">
           Satır: {content.split("\n").length} | Karakter: {content.length}
         </div>
       </div>

@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 
-import { calculateCenterPosition } from "../utils/window";
+import { Button } from "./ui/button";
+import { calculateCascadingPosition } from "../utils/window";
 import { useFileManagerStore } from "../store/fileManagerStore";
 import { useWindowManagerStore } from "../store/windowManagerStore";
 import { v4 as uuidv4 } from "uuid";
@@ -38,7 +39,7 @@ export const TextEditorHeaderTools = () => {
     } else {
       // Yeni bir metin düzenleyici penceresi açıyoruz
       const size = { width: 900, height: 700 };
-      const position = calculateCenterPosition(size.width, size.height);
+      const position = calculateCascadingPosition(size.width, size.height);
 
       addWindow({
         id: uuidv4(),
@@ -56,7 +57,7 @@ export const TextEditorHeaderTools = () => {
   const openFileManagerToOpen = () => {
     // FileManager penceresini aç
     const size = { width: 600, height: 500 };
-    const position = calculateCenterPosition(size.width, size.height);
+    const position = calculateCascadingPosition(size.width, size.height);
 
     // Pencereyi biraz yukarıda oluşturmak için y pozisyonunu ayarla
     position.y = Math.max(50, position.y - 150);
@@ -76,7 +77,7 @@ export const TextEditorHeaderTools = () => {
           const file = files.find((f) => f.id === fileId);
           if (file) {
             const editorSize = { width: 900, height: 700 };
-            const editorPosition = calculateCenterPosition(
+            const editorPosition = calculateCascadingPosition(
               editorSize.width,
               editorSize.height
             );
@@ -100,8 +101,10 @@ export const TextEditorHeaderTools = () => {
 
   return (
     <div className="flex items-center">
-      <button
-        className="p-1 rounded hover:bg-gray-700 mr-2"
+      <Button
+        variant="ghost"
+        size="icon"
+        className="p-1 mr-2"
         onClick={createNewTab}
         title="Yeni Tab"
       >
@@ -117,9 +120,11 @@ export const TextEditorHeaderTools = () => {
             clipRule="evenodd"
           />
         </svg>
-      </button>
-      <button
-        className="p-1 rounded hover:bg-gray-700"
+      </Button>
+      <Button
+        variant="ghost"
+        size="icon"
+        className="p-1"
         onClick={openFileManagerToOpen}
         title="Dosya Aç"
       >
@@ -141,7 +146,7 @@ export const TextEditorHeaderTools = () => {
             clipRule="evenodd"
           />
         </svg>
-      </button>
+      </Button>
     </div>
   );
 };
@@ -305,7 +310,7 @@ export const TextEditor = ({ initialFileId }: TextEditorProps) => {
 
     // FileManager penceresini aç
     const size = { width: 600, height: 500 };
-    const position = calculateCenterPosition(size.width, size.height);
+    const position = calculateCascadingPosition(size.width, size.height);
 
     addWindow({
       id: uuidv4(),
@@ -339,54 +344,61 @@ export const TextEditor = ({ initialFileId }: TextEditorProps) => {
 
   // Tab header bileşeni
   const TabHeader = () => (
-    <div className="flex text-sm bg-gray-800">
+    <div className="flex text-sm bg-card">
       {tabs.map((tab) => (
         <div
           key={tab.id}
-          className={`px-4 py-2 flex items-center cursor-pointer border-r border-gray-700 ${
-            tab.id === activeTabId ? "bg-gray-700" : "hover:bg-gray-700"
+          className={`px-4 py-2 flex items-center cursor-pointer border-r border-border ${
+            tab.id === activeTabId ? "bg-muted" : "hover:bg-muted"
           }`}
           onClick={() => setActiveTabId(tab.id)}
         >
           <span className="max-w-[120px] truncate">
             {tab.title} {tab.isModified && "•"}
           </span>
-          <button
-            className="ml-2 text-gray-400 hover:text-white text-xs"
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-4 w-4 ml-2 p-0 text-muted-foreground hover:text-foreground text-xs"
             onClick={(e) => {
               e.stopPropagation();
               closeTab(tab.id);
             }}
           >
             ×
-          </button>
+          </Button>
         </div>
       ))}
-      <button
-        className="px-3 py-2 text-gray-400 hover:text-white hover:bg-gray-700"
+      <Button
+        variant="ghost"
+        className="px-3 py-2 text-muted-foreground hover:text-foreground"
         onClick={createNewTab}
       >
         +
-      </button>
+      </Button>
     </div>
   );
 
   // Toolbar bileşeni
   const Toolbar = () => (
-    <div className="bg-gray-800 border-t border-b border-gray-700 py-1 px-4 flex items-center space-x-2">
-      <button
-        className="px-3 py-1 bg-blue-600 hover:bg-blue-700 rounded text-white text-sm"
+    <div className="bg-card border-t border-b border-border py-1 px-4 flex items-center space-x-2">
+      <Button
+        variant="default"
+        size="sm"
+        className="px-3 py-1"
         onClick={() => activeTabId && saveFile(activeTabId)}
         disabled={!activeTabId}
       >
         Kaydet
-      </button>
-      <button
-        className="px-3 py-1 bg-gray-700 hover:bg-gray-600 rounded text-white text-sm"
+      </Button>
+      <Button
+        variant="secondary"
+        size="sm"
+        className="px-3 py-1"
         onClick={() => {
           // FileManager penceresini aç
           const size = { width: 600, height: 500 };
-          const position = calculateCenterPosition(size.width, size.height);
+          const position = calculateCascadingPosition(size.width, size.height);
 
           // Pencereyi biraz yukarıda oluşturmak için y pozisyonunu ayarla
           position.y = Math.max(50, position.y - 150);
@@ -413,21 +425,22 @@ export const TextEditor = ({ initialFileId }: TextEditorProps) => {
         }}
       >
         Aç
-      </button>
+      </Button>
     </div>
   );
 
   // Kaydetme modalı
   const SaveModal = () => (
     <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
-      <div className="bg-gray-800 p-4 rounded-lg shadow-lg max-w-md">
+      <div className="bg-card p-4 rounded-lg shadow-lg max-w-md text-card-foreground">
         <h3 className="text-lg font-semibold mb-4">
           Kaydedilmemiş değişiklikler
         </h3>
         <p className="mb-4">Değişiklikleri kaydetmek ister misiniz?</p>
         <div className="flex justify-end space-x-2">
-          <button
-            className="px-3 py-1 bg-gray-700 hover:bg-gray-600 rounded text-white"
+          <Button
+            variant="outline"
+            size="sm"
             onClick={() => {
               setShowSaveModal(false);
               if (tabToClose) performCloseTab(tabToClose);
@@ -435,9 +448,10 @@ export const TextEditor = ({ initialFileId }: TextEditorProps) => {
             }}
           >
             Kaydetme
-          </button>
-          <button
-            className="px-3 py-1 bg-blue-600 hover:bg-blue-700 rounded text-white"
+          </Button>
+          <Button
+            variant="default"
+            size="sm"
             onClick={async () => {
               setShowSaveModal(false);
               if (tabToClose) {
@@ -448,16 +462,17 @@ export const TextEditor = ({ initialFileId }: TextEditorProps) => {
             }}
           >
             Kaydet
-          </button>
-          <button
-            className="px-3 py-1 bg-gray-600 hover:bg-gray-500 rounded text-white"
+          </Button>
+          <Button
+            variant="secondary"
+            size="sm"
             onClick={() => {
               setShowSaveModal(false);
               setTabToClose(null);
             }}
           >
             İptal
-          </button>
+          </Button>
         </div>
       </div>
     </div>
@@ -493,21 +508,21 @@ export const TextEditor = ({ initialFileId }: TextEditorProps) => {
   };
 
   return (
-    <div className="h-full flex flex-col bg-gray-900 text-white font-mono overflow-hidden">
+    <div className="h-full flex flex-col bg-background text-foreground font-mono overflow-hidden">
       <TabHeader />
       <Toolbar />
 
       {activeTab ? (
         <textarea
           ref={editorRef}
-          className="flex-1 w-full bg-gray-900 text-gray-200 p-4 resize-none outline-none font-mono min-h-0"
+          className="flex-1 w-full bg-background text-foreground p-4 resize-none outline-none font-mono min-h-0"
           value={activeTab.content}
           onChange={(e) => updateTabContent(e.target.value)}
           onKeyDown={handleKeyDown}
           spellCheck={false}
         />
       ) : (
-        <div className="flex-1 flex items-center justify-center text-gray-500">
+        <div className="flex-1 flex items-center justify-center text-muted-foreground">
           <p>Tab oluşturmak için + düğmesine tıklayın</p>
         </div>
       )}

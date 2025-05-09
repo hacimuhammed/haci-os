@@ -1,3 +1,4 @@
+import { Button } from "./ui/button";
 import { useSettingsStore } from "../store/settingsStore";
 import { useThemeStore } from "../store/themeStore";
 
@@ -15,22 +16,18 @@ export const ThemeSelector = () => {
       <div>
         <h3 className="font-medium mb-2">Tema</h3>
         <div className="flex space-x-2">
-          <button
-            className={`px-4 py-2 rounded-md ${
-              currentTheme.name === "dark" ? "bg-blue-500" : "bg-gray-600"
-            }`}
+          <Button
+            variant={currentTheme.name === "dark" ? "default" : "outline"}
             onClick={() => setTheme("dark")}
           >
             Koyu
-          </button>
-          <button
-            className={`px-4 py-2 rounded-md ${
-              currentTheme.name === "light" ? "bg-blue-500" : "bg-gray-600"
-            }`}
+          </Button>
+          <Button
+            variant={currentTheme.name === "light" ? "default" : "outline"}
             onClick={() => setTheme("light")}
           >
             Açık
-          </button>
+          </Button>
         </div>
       </div>
 
@@ -42,7 +39,7 @@ export const ThemeSelector = () => {
               key={wallpaper}
               className={`relative cursor-pointer rounded-md overflow-hidden ${
                 appearance.wallpaperPath === wallpaper
-                  ? "ring-2 ring-blue-500"
+                  ? "ring-2 ring-primary"
                   : ""
               }`}
               onClick={() => setWallpaper(wallpaper)}

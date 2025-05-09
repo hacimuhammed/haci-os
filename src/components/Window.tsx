@@ -1,6 +1,8 @@
+import { AnimatePresence, motion } from "framer-motion";
 import { useEffect, useRef, useState } from "react";
 
-import { motion } from "framer-motion";
+import { Button } from "./ui/button";
+import { useSettingsStore } from "../store/settingsStore";
 import { useWindowManagerStore } from "../store/windowManagerStore";
 
 interface WindowProps {
@@ -11,6 +13,46 @@ interface WindowProps {
   initialSize?: { width: number; height: number };
   headerLeft?: React.ReactNode;
 }
+
+// Farklı animasyon türleri için varyantlar
+const animationVariants = {
+  fade: {
+    initial: { opacity: 0 },
+    animate: { opacity: 1 },
+    exit: { opacity: 0 },
+    transition: { duration: 0.2 },
+  },
+  scale: {
+    initial: { opacity: 0, scale: 0.8 },
+    animate: { opacity: 1, scale: 1 },
+    exit: { opacity: 0, scale: 0.8 },
+    transition: { duration: 0.2 },
+  },
+  slide: {
+    initial: { opacity: 0, y: 20 },
+    animate: { opacity: 1, y: 0 },
+    exit: { opacity: 0, y: 20 },
+    transition: { duration: 0.2 },
+  },
+  flip: {
+    initial: { opacity: 0, rotateX: 15 },
+    animate: { opacity: 1, rotateX: 0 },
+    exit: { opacity: 0, rotateX: 15 },
+    transition: { duration: 0.3 },
+  },
+  rotate: {
+    initial: { opacity: 0, rotate: -2 },
+    animate: { opacity: 1, rotate: 0 },
+    exit: { opacity: 0, rotate: 2 },
+    transition: { duration: 0.3 },
+  },
+  none: {
+    initial: {},
+    animate: {},
+    exit: {},
+    transition: { duration: 0 },
+  },
+};
 
 export const Window = ({
   id,
@@ -29,6 +71,11 @@ export const Window = ({
     endSplitOnDrag,
   } = useWindowManagerStore();
 
+  const { tweaks } = useSettingsStore();
+
+  // Seçilen animasyon tipini al
+  const selectedAnimation = tweaks.windowAnimation;
+
   const windowRef = useRef<HTMLDivElement>(null);
   const headerRef = useRef<HTMLDivElement>(null);
   const resizerRef = useRef<HTMLDivElement>(null);
@@ -40,7 +87,15 @@ export const Window = ({
   const isDragging = useRef(false);
   const isResizing = useRef(false);
   const dragStartPos = useRef({ mouseX: 0, mouseY: 0, windowX: 0, windowY: 0 });
-  const resizeStartInfo = useRef({ mouseX: 0, mouseY: 0, width: 0, height: 0 });
+  const resizeStartInfo = useRef({
+    mouseX: 0,
+    mouseY: 0,
+    width: 0,
+    height: 0,
+    cursorType: "",
+    initialX: 0,
+    initialY: 0,
+  });
 
   // Animation frame Id for cleanup
   const animationFrameId = useRef<number | null>(null);
@@ -55,6 +110,12 @@ export const Window = ({
     const clampedY = Math.max(0, Math.min(y, windowHeight - size.height));
 
     return { x: clampedX, y: clampedY };
+  };
+
+  // Mevcut animasyon varyantlarını al
+  const getAnimationVariant = () => {
+    debugger;
+    return animationVariants[selectedAnimation] || animationVariants.fade;
   };
 
   // Component mount/unmount event listeners
@@ -96,24 +157,57 @@ export const Window = ({
         animationFrameId.current = requestAnimationFrame(() => {
           const deltaX = e.clientX - resizeStartInfo.current.mouseX;
           const deltaY = e.clientY - resizeStartInfo.current.mouseY;
+          const cursorType = resizeStartInfo.current.cursorType;
 
-          const newWidth = Math.max(
-            400,
-            resizeStartInfo.current.width + deltaX
-          );
-          const newHeight = Math.max(
-            300,
-            resizeStartInfo.current.height + deltaY
-          );
+          let newWidth = resizeStartInfo.current.width;
+          let newHeight = resizeStartInfo.current.height;
+          let newX = resizeStartInfo.current.initialX;
+          let newY = resizeStartInfo.current.initialY;
+
+          // Resize tipine göre boyutları ve pozisyonu ayarla
+          if (cursorType === "se-resize") {
+            // Sağ alt köşe (orijinal davranış)
+            newWidth = Math.max(400, resizeStartInfo.current.width + deltaX);
+            newHeight = Math.max(300, resizeStartInfo.current.height + deltaY);
+          } else if (cursorType === "sw-resize") {
+            // Sol alt köşe
+            newWidth = Math.max(400, resizeStartInfo.current.width - deltaX);
+            newHeight = Math.max(300, resizeStartInfo.current.height + deltaY);
+            newX =
+              resizeStartInfo.current.initialX +
+              resizeStartInfo.current.width -
+              newWidth;
+          } else if (cursorType === "ne-resize") {
+            // Sağ üst köşe
+            newWidth = Math.max(400, resizeStartInfo.current.width + deltaX);
+            newHeight = Math.max(300, resizeStartInfo.current.height - deltaY);
+            newY =
+              resizeStartInfo.current.initialY +
+              resizeStartInfo.current.height -
+              newHeight;
+          } else if (cursorType === "nw-resize") {
+            // Sol üst köşe
+            newWidth = Math.max(400, resizeStartInfo.current.width - deltaX);
+            newHeight = Math.max(300, resizeStartInfo.current.height - deltaY);
+            newX =
+              resizeStartInfo.current.initialX +
+              resizeStartInfo.current.width -
+              newWidth;
+            newY =
+              resizeStartInfo.current.initialY +
+              resizeStartInfo.current.height -
+              newHeight;
+          }
 
           // Ekran dışına taşmayı engelle
-          const maxWidth = window.innerWidth - position.x;
-          const maxHeight = window.innerHeight - position.y;
+          const maxWidth = window.innerWidth - newX;
+          const maxHeight = window.innerHeight - newY;
 
           const width = Math.min(newWidth, maxWidth);
           const height = Math.min(newHeight, maxHeight);
 
           setSize({ width, height });
+          setPosition({ x: newX, y: newY });
 
           animationFrameId.current = null;
         });
@@ -221,6 +315,16 @@ export const Window = ({
     // Aktif pencereyi en üstte göster
     bringToFront(id);
 
+    // Tıklanan köşeye göre resize türünü belirle
+    const target = e.currentTarget;
+    const cursorType = target.className.includes("resize-se")
+      ? "se-resize"
+      : target.className.includes("resize-sw")
+      ? "sw-resize"
+      : target.className.includes("resize-ne")
+      ? "ne-resize"
+      : "nw-resize";
+
     // Boyutlandırma durumunu kaydet
     isResizing.current = true;
     resizeStartInfo.current = {
@@ -228,10 +332,13 @@ export const Window = ({
       mouseY: e.clientY,
       width: size.width,
       height: size.height,
+      cursorType, // Cursor tipini kaydet
+      initialX: position.x, // Pozisyonu da kaydet (sol veya sağ kenarlarda kullanılacak)
+      initialY: position.y, // Pozisyonu da kaydet (üst veya alt kenarlarda kullanılacak)
     };
 
     // Boyutlandırma işareti
-    document.body.style.cursor = "se-resize";
+    document.body.style.cursor = cursorType;
   };
 
   // Prevent text selection while dragging
@@ -241,63 +348,98 @@ export const Window = ({
     }
   };
 
+  // Animasyon varyantını al
+  const variant = getAnimationVariant();
+
   return (
-    <div
-      ref={windowRef}
-      style={{
-        position: "absolute",
-        width: size.width,
-        height: size.height,
-        left: position.x,
-        top: position.y,
-        zIndex: activeWindowId === id ? 100 : 1,
-      }}
-      className="rounded-lg bg-gray-950 shadow-xl backdrop-blur-sm overflow-hidden"
-      onClick={() => setActiveWindow(id)}
-      onMouseDown={() => bringToFront(id)}
-    >
-      <div
-        ref={headerRef}
-        className="px-4 py-2 flex justify-between items-center cursor-move backdrop-blur-sm bg-opacity-80 hover:bg-opacity-90"
-        onMouseDown={handleDragStart}
-        onSelectCapture={preventSelection}
-      >
-        <div className="flex items-center">
-          {headerLeft && <div className="mr-3">{headerLeft}</div>}
-          <span>{title}</span>
-        </div>
-        <button
-          onClick={(e) => {
-            e.stopPropagation();
-            removeWindow(id);
-          }}
-          className="hover:text-red-500 transition-colors text-xl"
-        >
-          ×
-        </button>
-      </div>
-      <div className="h-[calc(100%-40px)] overflow-auto">{children}</div>
-      <div
-        ref={resizerRef}
-        className="absolute bottom-0 right-0 w-6 h-6 cursor-se-resize"
-        onMouseDown={handleResizeStart}
+    <AnimatePresence mode="wait">
+      <motion.div
+        key={id}
+        ref={windowRef}
         style={{
-          touchAction: "none",
+          position: "absolute",
+          width: size.width,
+          height: size.height,
+          left: position.x,
+          top: position.y,
+          boxShadow:
+            activeWindowId === id
+              ? "0 25px 50px -12px rgba(0, 0, 0, 0.25)"
+              : "0 10px 15px -3px rgba(0, 0, 0, 0.1)",
+          transformOrigin: "top center",
         }}
+        className={`rounded-lg overflow-hidden flex flex-col border ${
+          activeWindowId === id ? "border-primary" : "border-border"
+        } bg-card text-card-foreground`}
+        onClick={() => setActiveWindow(id)}
+        onMouseDown={() => bringToFront(id)}
+        // Animation properties
+        initial={variant.initial}
+        animate={variant.animate}
+        exit={variant.exit}
+        transition={variant.transition}
       >
-        <svg
-          width="10"
-          height="10"
-          viewBox="0 0 10 10"
-          fill="currentColor"
-          className="absolute right-1 bottom-1 opacity-70"
+        {/* Header */}
+        <div
+          ref={headerRef}
+          onMouseDown={handleDragStart}
+          className={`p-2 flex items-center justify-between cursor-move bg-card text-card-foreground select-none`}
         >
-          <rect x="0" y="8" width="10" height="2" />
-          <rect x="8" y="0" width="2" height="10" />
-          <rect x="4" y="8" width="2" height="2" />
-          <rect x="8" y="4" width="2" height="2" />
-        </svg>
-      </div>
-    </div>
+          <div className="flex items-center">{headerLeft}</div>
+          <div className="mx-2 flex-1 text-center truncate font-medium">
+            {title}
+          </div>
+          <div className="flex">
+            <Button
+              onClick={() => removeWindow(id)}
+              size="icon"
+              variant="ghost"
+              className="h-6 w-6 rounded-full hover:bg-destructive hover:text-destructive-foreground"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="18"
+                height="18"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <line x1="18" y1="6" x2="6" y2="18" />
+                <line x1="6" y1="6" x2="18" y2="18" />
+              </svg>
+            </Button>
+          </div>
+        </div>
+
+        {/* Content */}
+        <div
+          onMouseDown={preventSelection}
+          className="flex-1 overflow-auto p-1"
+        >
+          {children}
+        </div>
+
+        {/* Resizers - Tüm köşeler için resize handle ekle */}
+        <div
+          onMouseDown={handleResizeStart}
+          className="absolute bottom-0 right-0 w-4 h-4 cursor-se-resize z-10 resize-se"
+        />
+        <div
+          onMouseDown={handleResizeStart}
+          className="absolute bottom-0 left-0 w-4 h-4 cursor-sw-resize z-10 resize-sw"
+        />
+        <div
+          onMouseDown={handleResizeStart}
+          className="absolute top-0 right-0 w-4 h-4 cursor-ne-resize z-10 resize-ne"
+        />
+        <div
+          onMouseDown={handleResizeStart}
+          className="absolute top-0 left-0 w-4 h-4 cursor-nw-resize z-10 resize-nw"
+        />
+      </motion.div>
+    </AnimatePresence>
   );
 };
