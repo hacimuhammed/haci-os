@@ -5,6 +5,7 @@ import {
 import { useEffect, useRef, useState } from "react";
 
 import { useFileManagerStore } from "../../store/fileManagerStore";
+import { useUserStore } from "../../store/userStore";
 import { useWindowManagerStore } from "../../store/windowManagerStore";
 import { v4 as uuidv4 } from "uuid";
 
@@ -27,9 +28,29 @@ export const Terminal = () => {
   const [historyIndex, setHistoryIndex] = useState(-1);
   const [selectedSuggestionIndex, setSelectedSuggestionIndex] = useState(0);
 
-  const { files, currentPath, setCurrentPath, addFile } = useFileManagerStore();
+  const {
+    files,
+    currentPath,
+    setCurrentPath,
+    addFile,
+    getUserAccessibleFiles,
+    hasReadPermission,
+    hasWritePermission,
+    hasExecutePermission,
+  } = useFileManagerStore();
+
+  const { currentUser } = useUserStore();
   const { addWindow } = useWindowManagerStore();
   const inputRef = useRef<HTMLInputElement>(null);
+
+  // Kullanıcı giriş yapmamışsa engelle
+  if (!currentUser) {
+    return (
+      <div className="font-mono p-4 bg-black text-green-500 h-full overflow-auto">
+        <div>Error: Authentication required to use terminal</div>
+      </div>
+    );
+  }
 
   useEffect(() => {
     if (inputRef.current) {
@@ -57,9 +78,10 @@ export const Terminal = () => {
   };
 
   const getFilesAndDirsInCurrentPath = () => {
-    return files
-      .filter((file) => file.path === currentPath)
-      .map((file) => file.name);
+    // Kullanıcının erişebileceği dosyaları getir
+    return getUserAccessibleFiles(currentUser.username, currentPath).map(
+      (file) => file.name
+    );
   };
 
   const findSuggestions = (partialCommand: string) => {
@@ -137,42 +159,142 @@ export const Terminal = () => {
 
     switch (cmd) {
       case "ls":
-        output = files
-          .filter((file) => file.path === currentPath)
-          .map(
-            (file) =>
-              `${file.type === "folder" ? "d" : "-"}rwxr-xr-x ${file.name}`
-          )
+        // Kullanıcının erişebileceği dosyaları göster
+        const accessibleFiles = getUserAccessibleFiles(
+          currentUser.username,
+          currentPath
+        );
+        output = accessibleFiles
+          .map((file) => {
+            const permissions = [
+              file.type === "folder" ? "d" : "-",
+              hasReadPermission(file, currentUser.username) ? "r" : "-",
+              hasWritePermission(file, currentUser.username) ? "w" : "-",
+              hasExecutePermission(file, currentUser.username) ? "x" : "-",
+              "---", // Diğer kullanıcılar için izinler
+            ].join("");
+
+            return `${permissions} ${file.owner || "root"} ${file.name}`;
+          })
           .join("\n");
+
+        if (accessibleFiles.length === 0) {
+          output = "Directory is empty";
+        }
         break;
 
       case "cd":
         if (args[0]) {
-          const targetPath = args[0];
-          if (targetPath === "..") {
+          let targetPath = args[0];
+          let newPath = "";
+
+          // Mutlak yol mu?
+          if (targetPath.startsWith("/")) {
+            newPath = targetPath;
+          }
+          // Kısayol: ~ ile başlıyorsa kullanıcının ev dizinine git
+          else if (targetPath === "~" || targetPath.startsWith("~/")) {
+            const homePath = `/home/${currentUser.username}`;
+            newPath =
+              targetPath === "~"
+                ? homePath
+                : `${homePath}/${targetPath.substring(2)}`;
+          }
+          // Özel durum: '..' ile üst dizine git
+          else if (targetPath === "..") {
             const parentPath =
               currentPath.split("/").slice(0, -1).join("/") || "/";
-            setCurrentPath(parentPath);
-            output = `Changed directory to ${parentPath}`;
-          } else {
-            const targetFolder = files.find(
-              (f) =>
-                f.path === currentPath &&
-                f.name === targetPath &&
-                f.type === "folder"
-            );
-
-            if (targetFolder) {
-              const newPath = `${currentPath}/${targetPath}`.replace(
-                /\/+/g,
-                "/"
-              );
-              setCurrentPath(newPath);
-              output = `Changed directory to ${newPath}`;
-            } else {
-              output = `cd: ${targetPath}: No such directory`;
-            }
+            newPath = parentPath;
           }
+          // Nispi yol
+          else {
+            newPath = `${currentPath}/${targetPath}`.replace(/\/+/g, "/");
+          }
+
+          // Yol kontrolü ve normalize
+          newPath = newPath.replace(/\/+/g, "/");
+          if (newPath === "") newPath = "/";
+
+          // Hedef yolun varlığını kontrol et
+          // Önce "/" ile başlayan yol bileşenlerini ayır
+          const pathParts = newPath.split("/").filter((part) => part !== "");
+          let currentPathCheck = "/";
+          let targetExists = true;
+          let permissionExists = true;
+
+          // Yolu adım adım kontrol et
+          for (let i = 0; i < pathParts.length; i++) {
+            const part = pathParts[i];
+            const nextPath =
+              currentPathCheck === "/"
+                ? `/${part}`
+                : `${currentPathCheck}/${part}`;
+
+            // Özel durum: /home dizini ve /home/username kontrolleri
+            if (
+              nextPath === "/home" ||
+              nextPath === `/home/${currentUser.username}`
+            ) {
+              // /home ve /home/username her zaman var kabul edilir
+              currentPathCheck = nextPath;
+              continue;
+            }
+
+            // Dosya sisteminde var mı?
+            const pathExists = files.some((f) => {
+              if (i === 0 && part === "home") return true; // /home her zaman var
+              if (nextPath === `/home/${currentUser.username}`) return true; // kullanıcı home'u her zaman var
+
+              return (
+                f.path === currentPathCheck &&
+                f.name === part &&
+                f.type === "folder"
+              );
+            });
+
+            if (!pathExists) {
+              targetExists = false;
+              break;
+            }
+
+            // Erişim izni var mı?
+            if (
+              nextPath !== "/home" &&
+              nextPath !== `/home/${currentUser.username}`
+            ) {
+              const folder = files.find(
+                (f) =>
+                  f.path === currentPathCheck &&
+                  f.name === part &&
+                  f.type === "folder"
+              );
+
+              if (
+                folder &&
+                !hasExecutePermission(folder, currentUser.username)
+              ) {
+                permissionExists = false;
+                break;
+              }
+            }
+
+            currentPathCheck = nextPath;
+          }
+
+          // Hedef yol var mı ve erişim izni var mı?
+          if (!targetExists) {
+            output = `cd: ${targetPath}: No such directory`;
+          } else if (!permissionExists) {
+            output = `cd: ${targetPath}: Permission denied`;
+          } else {
+            setCurrentPath(newPath);
+            output = `Changed directory to ${newPath}`;
+          }
+        } else {
+          // Argüman verilmemişse ev dizinine git
+          const homePath = `/home/${currentUser.username}`;
+          setCurrentPath(homePath);
+          output = `Changed directory to ${homePath}`;
         }
         break;
 
@@ -182,6 +304,21 @@ export const Terminal = () => {
 
       case "touch":
         if (args[0]) {
+          // Şu anki dizine yazma izni kontrolü
+          const currentDir = files.find(
+            (f) =>
+              f.path === currentPath.split("/").slice(0, -1).join("/") &&
+              f.name === currentPath.split("/").pop()
+          );
+
+          if (
+            currentDir &&
+            !hasWritePermission(currentDir, currentUser.username)
+          ) {
+            output = `touch: cannot create file '${args[0]}': Permission denied`;
+            break;
+          }
+
           const fileExists = files.some(
             (f) =>
               f.path === currentPath && f.name === args[0] && f.type === "file"
@@ -191,11 +328,17 @@ export const Terminal = () => {
             output = `touch: cannot create file '${args[0]}': File exists`;
           } else {
             const newFile = {
-              id: crypto.randomUUID(),
+              id: uuidv4(),
               name: args[0],
               type: "file" as const,
               path: currentPath,
               content: "",
+              owner: currentUser.username,
+              permissions: {
+                read: [currentUser.username],
+                write: [currentUser.username],
+                execute: [currentUser.username],
+              },
             };
             addFile(newFile);
             output = `Created file ${args[0]}`;
@@ -207,6 +350,21 @@ export const Terminal = () => {
 
       case "mkdir":
         if (args[0]) {
+          // Şu anki dizine yazma izni kontrolü
+          const currentDir = files.find(
+            (f) =>
+              f.path === currentPath.split("/").slice(0, -1).join("/") &&
+              f.name === currentPath.split("/").pop()
+          );
+
+          if (
+            currentDir &&
+            !hasWritePermission(currentDir, currentUser.username)
+          ) {
+            output = `mkdir: cannot create directory '${args[0]}': Permission denied`;
+            break;
+          }
+
           const folderExists = files.some(
             (f) =>
               f.path === currentPath &&
@@ -218,10 +376,16 @@ export const Terminal = () => {
             output = `mkdir: cannot create directory '${args[0]}': Directory exists`;
           } else {
             const newFolder = {
-              id: crypto.randomUUID(),
+              id: uuidv4(),
               name: args[0],
               type: "folder" as const,
               path: currentPath,
+              owner: currentUser.username,
+              permissions: {
+                read: [currentUser.username],
+                write: [currentUser.username],
+                execute: [currentUser.username],
+              },
             };
             addFile(newFolder);
             output = `Created directory ${args[0]}`;
@@ -238,10 +402,12 @@ export const Terminal = () => {
               f.path === currentPath && f.name === args[0] && f.type === "file"
           );
 
-          if (file) {
-            output = file.content || "(empty file)";
-          } else {
+          if (!file) {
             output = `cat: ${args[0]}: No such file`;
+          } else if (!hasReadPermission(file, currentUser.username)) {
+            output = `cat: ${args[0]}: Permission denied`;
+          } else {
+            output = file.content || "(empty file)";
           }
         } else {
           output = "cat: missing file operand";
@@ -250,91 +416,31 @@ export const Terminal = () => {
 
       case "nano":
         if (args[0]) {
-          const file = files.find(
-            (f) =>
-              f.path === currentPath && f.name === args[0] && f.type === "file"
-          );
-
-          if (file) {
-            // Pencere oluştur
-            const size = { width: 800, height: 600 };
-            const position = calculateCascadingPosition(
-              size.width,
-              size.height
-            );
-
-            addWindow({
-              id: uuidv4(),
-              title: `Nano: ${args[0]}`,
-              type: "nano",
-              position,
-              size,
-              isMinimized: false,
-              isMaximized: false,
-              zIndex: 1,
-              fileId: file.id,
-            });
-            output = `Opening ${args[0]} in nano editor...`;
-          } else {
-            // Dosya yoksa oluştur
-            const newFileId = crypto.randomUUID();
-            const newFile = {
-              id: newFileId,
-              name: args[0],
-              type: "file" as const,
-              path: currentPath,
-              content: "",
-            };
-            addFile(newFile);
-
-            // Pencere oluştur
-            const size = { width: 800, height: 600 };
-            const position = calculateCascadingPosition(
-              size.width,
-              size.height
-            );
-
-            addWindow({
-              id: uuidv4(),
-              title: `Nano: ${args[0]}`,
-              type: "nano",
-              position,
-              size,
-              isMinimized: false,
-              isMaximized: false,
-              zIndex: 1,
-              fileId: newFileId,
-            });
-
-            output = `Created and opening new file ${args[0]} in nano editor...`;
-          }
+          handleOpenFile();
         } else {
           output = "nano: missing file operand";
         }
+        break;
+
+      case "help":
+        output = `Available commands:
+ls - List directory contents
+cd - Change directory
+pwd - Print working directory
+touch - Create empty file
+mkdir - Create directory
+clear - Clear terminal
+cat - Display file content
+nano - Edit file
+help - Display this help`;
         break;
 
       case "clear":
         setCommands([]);
         return;
 
-      case "help":
-        output = `Available commands:
-  ls - List directory contents
-  cd - Change directory
-  pwd - Print working directory
-  touch - Create a file
-  mkdir - Create a directory
-  cat - Display file contents
-  nano - Open simple text editor
-  clear - Clear terminal
-  help - Display this help message`;
-        break;
-
-      case "":
-        return;
-
       default:
-        output = `Command not found: ${cmd}`;
+        output = `${cmd}: command not found`;
     }
 
     setCommands([...commands, { command, output }]);

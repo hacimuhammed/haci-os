@@ -9,6 +9,7 @@ import { AnimationPreview } from "./components/AnimationPreview";
 import { DashToDock } from "./components/DashToDock";
 import { Desktop } from "./components/Desktop";
 import { FileManager } from "./components/apps/FileManager";
+import { GDM } from "./components/GDM";
 import { Nano } from "./components/apps/Nano";
 import { SettingsPanel } from "./components/apps/SettingsPanel";
 import { SystemContextMenu } from "./components/SystemContextMenu";
@@ -16,6 +17,7 @@ import { Terminal } from "./components/apps/Terminal";
 import { Topbar } from "./components/Topbar";
 import { Window } from "./components/Window";
 import { useThemeStore } from "./store/themeStore";
+import { useUserStore } from "./store/userStore";
 import { useWindowManagerStore } from "./store/windowManagerStore";
 
 // Ekran Bölücü Bileşeni
@@ -235,6 +237,13 @@ function App() {
     snapWindowToRight,
   } = useWindowManagerStore();
   const { currentTheme, setTheme } = useThemeStore();
+  const { isAuthenticated, initializeSystem } = useUserStore();
+
+  // Sistem başlatma
+  useEffect(() => {
+    // Kullanıcı sistemini ve dosya sistemini başlat
+    initializeSystem();
+  }, [initializeSystem]);
 
   // Tema başlatma
   useEffect(() => {
@@ -447,6 +456,9 @@ function App() {
 
         {/* Sistem Context Menu */}
         <SystemContextMenu />
+
+        {/* GDM Kullanıcı Giriş Ekranı */}
+        <AnimatePresence>{!isAuthenticated && <GDM />}</AnimatePresence>
       </div>
     </div>
   );

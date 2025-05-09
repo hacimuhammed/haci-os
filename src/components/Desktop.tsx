@@ -7,6 +7,7 @@ import { Button } from "./ui/button";
 import { useFileManagerStore } from "../store/fileManagerStore";
 import { useSettingsStore } from "../store/settingsStore";
 import { useState } from "react";
+import { useUserStore } from "../store/userStore";
 import { useWindowManagerStore } from "../store/windowManagerStore";
 import { v4 as uuidv4 } from "uuid";
 
@@ -14,11 +15,34 @@ export const Desktop = () => {
   const { files, addFile } = useFileManagerStore();
   const { addWindow } = useWindowManagerStore();
   const { appearance } = useSettingsStore();
+  const { currentUser } = useUserStore();
+
   const [contextMenu, setContextMenu] = useState<{
     x: number;
     y: number;
   } | null>(null);
   const [editingFile, setEditingFile] = useState<string | null>(null);
+
+  // Eğer giriş yapmış kullanıcı yoksa, masaüstünde dosya gösterme
+  if (!currentUser) {
+    return (
+      <div
+        className="w-full h-screen relative"
+        style={{
+          backgroundImage: `url(${appearance.wallpaperPath})`,
+          backgroundSize: "cover",
+          backgroundPosition: "center",
+        }}
+      />
+    );
+  }
+
+  // Sadece kullanıcının Desktop klasöründeki dosyaları göster
+  // Alt klasörlere inme, yalnızca ilk seviye dosyaları göster
+  const desktopPath = `/home/${currentUser.username}/Desktop`;
+  const desktopFiles = files.filter(
+    (file) => file.path === desktopPath && file.owner === currentUser.username
+  );
 
   const handleContextMenu = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -30,7 +54,13 @@ export const Desktop = () => {
       id: uuidv4(),
       name: "New Folder",
       type: "folder" as const,
-      path: "/home",
+      path: desktopPath,
+      owner: currentUser.username,
+      permissions: {
+        read: [currentUser.username, "admin"],
+        write: [currentUser.username, "admin"],
+        execute: [currentUser.username, "admin"],
+      },
     };
     addFile(newFolder);
     setContextMenu(null);
@@ -53,6 +83,23 @@ export const Desktop = () => {
         isMinimized: false,
         isMaximized: false,
         zIndex: 1,
+        data: { path: `${file.path}/${file.name}` },
+      });
+    } else if (file.type === "file") {
+      // Dosya türüne göre uygun uygulama aç
+      const size = { width: 800, height: 600 };
+      const position = calculateCascadingPosition(size.width, size.height);
+
+      addWindow({
+        id: uuidv4(),
+        title: `Text Editor: ${file.name}`,
+        type: "text-editor",
+        position,
+        size,
+        isMinimized: false,
+        isMaximized: false,
+        zIndex: 1,
+        fileId: file.id,
       });
     }
   };
@@ -77,7 +124,7 @@ export const Desktop = () => {
       }}
     >
       <div className="grid grid-cols-6 gap-4 p-4">
-        {files.map((file) => (
+        {desktopFiles.map((file) => (
           <div
             key={file.id}
             className="flex flex-col items-center p-2 cursor-pointer"

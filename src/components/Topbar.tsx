@@ -1,10 +1,14 @@
 import { useEffect, useState } from "react";
 
+import { Button } from "./ui/button";
+import { LogOut } from "lucide-react";
 import { ThemeSelector } from "./ThemeSelector";
+import { useUserStore } from "../store/userStore";
 
 export const Topbar = () => {
   const [time, setTime] = useState(new Date());
   const [showSettings, setShowSettings] = useState(false);
+  const { currentUser, logout } = useUserStore();
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -29,6 +33,10 @@ export const Topbar = () => {
     });
   };
 
+  const handleLogout = () => {
+    logout();
+  };
+
   return (
     <div className="bg-background h-10 py-3 bg-opacity-90 backdrop-blur-sm flex items-center justify-between px-4 relative z-50">
       <div>{/* Logo veya başlangıç menüsü burada olabilir */}</div>
@@ -36,6 +44,20 @@ export const Topbar = () => {
       <div className="flex items-center space-x-4">
         <span>{formatTime()}</span>
         <span>{formatDate()}</span>
+
+        {currentUser && (
+          <div className="flex items-center space-x-2 ml-4">
+            <span className="text-sm">{currentUser.username}</span>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={handleLogout}
+              className="text-destructive hover:text-destructive hover:bg-destructive/10"
+            >
+              <LogOut className="h-4 w-4" />
+            </Button>
+          </div>
+        )}
       </div>
 
       {showSettings && (
