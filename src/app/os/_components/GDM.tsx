@@ -1,32 +1,42 @@
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { useFileManagerStore } from '@/store/fileManagerStore';
+"use client";
 
-import { useUserStore } from '@/store/userStore';
-import { AnimatePresence, motion } from 'framer-motion';
-import { LogIn, Trash2, UserPlus, X } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { AnimatePresence, motion } from "framer-motion";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { LogIn, LogOut, UserPlus, X } from "lucide-react";
+import { authClient, signIn, signUp, useSession } from "@/lib/auth-client";
+import { useEffect, useState } from "react";
+
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { useFileManagerStore } from "@/store/fileManagerStore";
+import { useRouter } from "next/navigation";
+import { useUserStore } from "@/store/userStore";
 
 enum GDMMode {
   LOGIN,
   CREATE_USER,
-  DELETE_USER,
+  SESSION_SELECT,
 }
 
 export const GDM = () => {
-  const [mode, setMode] = useState<GDMMode>(GDMMode.LOGIN);
-  const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
-  const [error, setError] = useState('');
-  const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
-  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [mode, setMode] = useState<GDMMode>(GDMMode.SESSION_SELECT);
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [error, setError] = useState("");
 
-  const { users, addUser, removeUser, login } = useUserStore();
+  const { sessions, setActiveSession, currentUser } = useUserStore();
   const { initializeUserDirectory } = useFileManagerStore();
+  const router = useRouter();
+  const { data: session } = useSession();
 
   const [currentTime, setCurrentTime] = useState(new Date());
+
+  useEffect(() => {
+    if (session) {
+      router.push("/os");
+    }
+  }, [session, router]);
 
   // Saat güncellemesi için interval
   useEffect(() => {
@@ -37,85 +47,117 @@ export const GDM = () => {
     return () => clearInterval(interval);
   }, []);
 
-  const handleLogin = () => {
-    if (!username || !password) {
-      setError('Kullanıcı adı ve şifre gereklidir');
-      return;
-    }
+  const handleSessionSelect = async (sessionId: string) => {
+    try {
+      const session = sessions.find((s) => s.id === sessionId);
+      if (!session) {
+        setError("Session not found");
+        return;
+      }
 
-    const success = login(username, password);
-    if (!success) {
-      setError('Geçersiz kullanıcı adı veya şifre');
+      setActiveSession(sessionId);
+      router.push("/os");
+    } catch (err: any) {
+      setError(err.message || "Session change failed");
     }
   };
 
-  const handleCreateUser = () => {
-    if (!username) {
-      setError('Kullanıcı adı gereklidir');
-      return;
+  const handleLogout = async (sessionId: string, e: React.MouseEvent) => {
+    e.stopPropagation(); // Oturum seçimini engelle
+    try {
+      await authClient.multiSession.listDeviceSessions();
+      await authClient.signOut();
+      // Store'dan oturumu kaldır
+      useUserStore.setState((state) => ({
+        sessions: state.sessions.filter((s) => s.id !== sessionId),
+      }));
+    } catch (err: any) {
+      setError(err.message || "Session logout failed");
     }
+  };
 
-    if (!password) {
-      setError('Şifre gereklidir');
-      return;
-    }
-
-    if (password !== confirmPassword) {
-      setError('Şifreler eşleşmiyor');
+  const handleLogin = async () => {
+    if (!email || !password) {
+      setError("Email and password are required");
       return;
     }
 
     try {
-      // Yeni kullanıcı oluştur
-      const newUser = addUser(username, password);
-
-      // Kullanıcının home dizinini ve klasörlerini oluştur
-      initializeUserDirectory(newUser.username);
-
-      // Formu temizle ve login moduna dön
-      setUsername('');
-      setPassword('');
-      setConfirmPassword('');
-      setMode(GDMMode.LOGIN);
-      setError('');
+      const sessionData = await authClient.signIn.email({
+        email,
+        password,
+        callbackURL: process.env.NEXT_PUBLIC_BETTER_AUTH_URL + "/os",
+      });
+      if (sessionData.data?.token) {
+        await authClient.multiSession.setActive({
+          sessionToken: sessionData.data?.token,
+        });
+      }
     } catch (err: any) {
-      setError(err.message);
+      setError(err.message || "Login failed");
     }
   };
 
-  const handleDeleteUser = () => {
-    if (selectedUserId) {
-      removeUser(selectedUserId);
-      setShowDeleteConfirm(false);
-      setSelectedUserId(null);
+  const handleCreateUser = async () => {
+    if (!email) {
+      setError("Email is required");
+      return;
+    }
+
+    if (!password) {
+      setError("Password is required");
+      return;
+    }
+
+    if (password.length < 8) {
+      setError("Password must be at least 8 characters long");
+      return;
+    }
+
+    if (password !== confirmPassword) {
+      setError("Passwords do not match");
+      return;
+    }
+
+    try {
+      await authClient.signUp.email({
+        email,
+        password,
+        name: email,
+        callbackURL: process.env.NEXT_PUBLIC_BETTER_AUTH_URL + "/os",
+      });
+
+      // Başarılı kayıt durumunda formu temizle ve giriş ekranına geç
+      setEmail("");
+      setPassword("");
+      setConfirmPassword("");
       setMode(GDMMode.LOGIN);
+      setError("");
+    } catch (err: any) {
+      setError(err.message || "Registration failed");
+      // Hata durumunda giriş ekranına yönlendirme yapma
     }
   };
-
-  // Seçilen kullanıcı bilgileri
-  const selectedUser = selectedUserId
-    ? users.find(user => user.id === selectedUserId)
-    : null;
 
   const formatTime = () => {
     return currentTime.toLocaleTimeString(undefined, {
-      hour: '2-digit',
-      minute: '2-digit',
+      hour: "2-digit",
+      minute: "2-digit",
     });
   };
 
   const formatDate = () => {
     return currentTime.toLocaleDateString(undefined, {
-      weekday: 'long',
-      month: 'long',
-      day: 'numeric',
+      weekday: "long",
+      month: "long",
+      day: "numeric",
     });
   };
 
   return (
     <div className="fixed inset-0 flex flex-col items-center justify-center bg-background/95 backdrop-blur-md z-[1000] p-4">
       <div className="absolute top-8 text-center">
-        <h1 className="text-4xl font-bold">{formatTime()}</h1>
+        <h1 className="text-4xl xl:text-6xl font-bold">{formatTime()}</h1>
         <p className="text-lg mt-2">{formatDate()}</p>
       </div>
 
@@ -128,51 +170,104 @@ export const GDM = () => {
           transition={{ duration: 0.3 }}
           className="bg-card p-6 rounded-lg shadow-lg w-full max-w-md"
         >
-          {mode === GDMMode.LOGIN && (
+          {mode === GDMMode.SESSION_SELECT && (
             <div className="space-y-6">
               <h2 className="text-2xl font-bold text-center">
-                Kullanıcı Giriş
+                Select a session
               </h2>
 
-              <div className="grid grid-cols-3 gap-3 my-6">
-                {users.map(user => (
-                  <div
-                    key={user.id}
-                    className={`flex flex-col items-center p-3 rounded-lg cursor-pointer transition-colors ${
-                      selectedUserId === user.id
-                        ? 'bg-primary/20'
-                        : 'hover:bg-muted'
-                    }`}
-                    onClick={() => {
-                      setSelectedUserId(user.id);
-                      setUsername(user.username);
-                      setError('');
-                    }}
-                  >
-                    <Avatar className="h-16 w-16 mb-2">
-                      <AvatarFallback>
-                        {user.username.slice(0, 2).toUpperCase()}
-                      </AvatarFallback>
-                      {user.avatar && <AvatarImage src={user.avatar} />}
-                    </Avatar>
-                    <span className="text-sm font-medium">{user.username}</span>
-                  </div>
-                ))}
+              {sessions.length > 0 ? (
+                <div className="space-y-3">
+                  {sessions.map((session) => (
+                    <div key={session.id} className="relative group">
+                      <Button
+                        variant="outline"
+                        className="w-full justify-start h-14"
+                        onClick={() => handleSessionSelect(session.id)}
+                      >
+                        <Avatar className="h-8 w-8 mr-3">
+                          <AvatarImage src={session.avatar} />
+                          <AvatarFallback>
+                            {session.username.charAt(0).toUpperCase()}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div className="flex flex-col items-start">
+                          <span className="font-medium">
+                            {session.username}
+                          </span>
+                          <span className="text-xs text-muted-foreground">
+                            Last active: {session.lastActive.toLocaleString()}
+                          </span>
+                        </div>
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="absolute right-2 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity"
+                        onClick={(e) => handleLogout(session.id, e)}
+                      >
+                        <LogOut className="h-4 w-4 text-destructive" />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-center text-muted-foreground">
+                  No active sessions found
+                </p>
+              )}
+
+              <div className="flex space-x-2">
+                <Button
+                  className="flex-1"
+                  onClick={() => setMode(GDMMode.LOGIN)}
+                >
+                  <LogIn className="mr-2 h-4 w-4" />
+                  New Login
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setMode(GDMMode.CREATE_USER);
+                    setEmail("");
+                    setPassword("");
+                    setError("");
+                  }}
+                >
+                  <UserPlus className="mr-2 h-4 w-4" />
+                  New User
+                </Button>
+              </div>
+            </div>
+          )}
+
+          {mode === GDMMode.LOGIN && (
+            <div className="space-y-6">
+              <div className="flex justify-between items-center">
+                <h2 className="text-2xl font-bold">Login</h2>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => setMode(GDMMode.SESSION_SELECT)}
+                >
+                  <X className="h-4 w-4" />
+                </Button>
               </div>
 
               <div className="space-y-3">
                 <Input
-                  placeholder="Kullanıcı adı"
-                  value={username}
-                  onChange={e => setUsername(e.target.value)}
+                  placeholder="E-posta"
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
                 />
                 <Input
                   placeholder="Şifre"
                   type="password"
                   value={password}
-                  onChange={e => setPassword(e.target.value)}
+                  onChange={(e) => setPassword(e.target.value)}
                   onKeyDown={(e) => {
-                    if (e.key === 'Enter') {
+                    if (e.key === "Enter") {
                       handleLogin();
                     }
                   }}
@@ -181,44 +276,21 @@ export const GDM = () => {
                 {error && <p className="text-destructive text-sm">{error}</p>}
               </div>
 
-              <div className="flex space-x-2">
-                <Button className="flex-1" onClick={handleLogin}>
-                  <LogIn className="mr-2 h-4 w-4" />
-                  Giriş Yap
-                </Button>
-                <Button
-                  variant="outline"
-                  onClick={() => {
-                    setMode(GDMMode.CREATE_USER);
-                    setUsername('');
-                    setPassword('');
-                    setError('');
-                  }}
-                >
-                  <UserPlus className="mr-2 h-4 w-4" />
-                  Yeni Kullanıcı
-                </Button>
-                {selectedUserId && (
-                  <Button
-                    variant="destructive"
-                    size="icon"
-                    onClick={() => setShowDeleteConfirm(true)}
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                )}
-              </div>
+              <Button className="w-full" onClick={handleLogin}>
+                <LogIn className="mr-2 h-4 w-4" />
+                Login
+              </Button>
             </div>
           )}
 
           {mode === GDMMode.CREATE_USER && (
             <div className="space-y-6">
               <div className="flex justify-between items-center">
-                <h2 className="text-2xl font-bold">Yeni Kullanıcı</h2>
+                <h2 className="text-2xl font-bold">New User</h2>
                 <Button
                   variant="ghost"
                   size="icon"
-                  onClick={() => setMode(GDMMode.LOGIN)}
+                  onClick={() => setMode(GDMMode.SESSION_SELECT)}
                 >
                   <X className="h-4 w-4" />
                 </Button>
@@ -226,21 +298,22 @@ export const GDM = () => {
 
               <div className="space-y-3">
                 <Input
-                  placeholder="Kullanıcı adı"
-                  value={username}
-                  onChange={e => setUsername(e.target.value)}
+                  placeholder="E-posta"
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
                 />
                 <Input
                   placeholder="Şifre"
                   type="password"
                   value={password}
-                  onChange={e => setPassword(e.target.value)}
+                  onChange={(e) => setPassword(e.target.value)}
                 />
                 <Input
                   placeholder="Şifreyi onayla"
                   type="password"
                   value={confirmPassword}
-                  onChange={e => setConfirmPassword(e.target.value)}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
                 />
 
                 {error && <p className="text-destructive text-sm">{error}</p>}
@@ -248,44 +321,12 @@ export const GDM = () => {
 
               <Button className="w-full" onClick={handleCreateUser}>
                 <UserPlus className="mr-2 h-4 w-4" />
-                Kullanıcı Oluştur
+                Create User
               </Button>
             </div>
           )}
         </motion.div>
       </AnimatePresence>
-
-      {/* Silme onayı modal */}
-      {showDeleteConfirm && (
-        <div className="fixed inset-0 flex items-center justify-center bg-black/50 z-[1001]">
-          <div className="bg-card p-6 rounded-lg shadow-lg w-full max-w-sm">
-            <h3 className="text-xl font-bold mb-4">Kullanıcıyı Sil</h3>
-            <p>
-              <strong>{selectedUser?.username}</strong>
-              {' '}
-              kullanıcısını silmek
-              istediğinizden emin misiniz? Bu işlem geri alınamaz.
-            </p>
-            <div className="flex space-x-2 mt-6">
-              <Button
-                variant="destructive"
-                className="flex-1"
-                onClick={handleDeleteUser}
-              >
-                <Trash2 className="mr-2 h-4 w-4" />
-                Sil
-              </Button>
-              <Button
-                variant="outline"
-                className="flex-1"
-                onClick={() => setShowDeleteConfirm(false)}
-              >
-                İptal
-              </Button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 };
