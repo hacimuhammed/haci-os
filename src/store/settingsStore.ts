@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
+import service from "../services";
 
 type AppearanceSettings = {
   wallpaperPath: string;
@@ -60,26 +61,24 @@ export const useSettingsStore = create<SettingsState>()(
       initializeSettings: async (userId: string) => {
         set({ isLoading: true });
         try {
-          const response = await fetch(`/api/settings`);
-          if (response.ok) {
-            const settings = await response.json();
-            set({
-              appearance: {
-                wallpaperPath: settings.wallpaperPath,
-              },
-              system: {
-                language: settings.language,
-                timeFormat: settings.timeFormat as "12h" | "24h",
-              },
-              tweaks: {
-                iconPack: settings.iconPack,
-                windowAnimation:
-                  settings.windowAnimation as WindowAnimationType,
-              },
-              userId,
-              hasInitialized: true,
-            });
-          }
+          const settings = await service.settings.getSettings();
+          set({
+            appearance: {
+              wallpaperPath:
+                settings.wallpaperPath || "/wallpapers/Plucky_Puffin.webp",
+            },
+            system: {
+              language: settings.language || "en",
+              timeFormat: (settings.timeFormat as "12h" | "24h") || "24h",
+            },
+            tweaks: {
+              iconPack: settings.iconPack || "whitesur-light",
+              windowAnimation:
+                (settings.windowAnimation as WindowAnimationType) || "fade",
+            },
+            userId,
+            hasInitialized: true,
+          });
         } catch (error) {
           console.error("Ayarlar yüklenirken bir hata oluştu:", error);
         } finally {
@@ -99,11 +98,7 @@ export const useSettingsStore = create<SettingsState>()(
 
         if (userId) {
           try {
-            await fetch(`/api/settings`, {
-              method: "PATCH",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ wallpaperPath: path }),
-            });
+            await service.settings.updateSettings({ wallpaperPath: path });
           } catch (error) {
             console.error(
               "Duvar kağıdı güncellenirken bir hata oluştu:",
@@ -125,11 +120,7 @@ export const useSettingsStore = create<SettingsState>()(
 
         if (userId) {
           try {
-            await fetch(`/api/settings`, {
-              method: "PATCH",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ language }),
-            });
+            await service.settings.updateSettings({ language });
           } catch (error) {
             console.error("Dil güncellenirken bir hata oluştu:", error);
           }
@@ -148,11 +139,7 @@ export const useSettingsStore = create<SettingsState>()(
 
         if (userId) {
           try {
-            await fetch(`/api/settings`, {
-              method: "PATCH",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ timeFormat: format }),
-            });
+            await service.settings.updateSettings({ timeFormat: format });
           } catch (error) {
             console.error(
               "Zaman formatı güncellenirken bir hata oluştu:",
@@ -174,11 +161,7 @@ export const useSettingsStore = create<SettingsState>()(
 
         if (userId) {
           try {
-            await fetch(`/api/settings`, {
-              method: "PATCH",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ iconPack }),
-            });
+            await service.settings.updateSettings({ iconPack });
           } catch (error) {
             console.error("İkon paketi güncellenirken bir hata oluştu:", error);
           }
@@ -197,11 +180,7 @@ export const useSettingsStore = create<SettingsState>()(
 
         if (userId) {
           try {
-            await fetch(`/api/settings`, {
-              method: "PATCH",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ windowAnimation }),
-            });
+            await service.settings.updateSettings({ windowAnimation });
           } catch (error) {
             console.error(
               "Pencere animasyonu güncellenirken bir hata oluştu:",
