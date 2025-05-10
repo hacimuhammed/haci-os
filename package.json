@@ -8,7 +8,7 @@
     "lint:fix": "next lint --fix",
     "eslint": "eslint .",
     "eslint:fix": "eslint . --fix",
-    "postinstall": "prisma generate --no-engine"
+    "postinstall": "prisma generate"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.0.1",
