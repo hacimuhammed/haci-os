@@ -19,6 +19,8 @@ import { SystemContextMenu } from "./_components/SystemContextMenu";
 import { Terminal } from "./_components/apps/Terminal";
 import { Topbar } from "./_components/Topbar";
 import { Window } from "./_components/Window";
+import { getIconPath } from "@/icons/iconPaths";
+import { useSettingsStore } from "@/src/store/settingsStore";
 import { useThemeStore } from "@/store/themeStore";
 import { useUserStore } from "@/store/userStore";
 import { useWindowManagerStore } from "@/store/windowManagerStore";
@@ -120,7 +122,7 @@ const AltQSwitcher = () => {
                 : "border-gray-700"
             }`}
           >
-            <div className="text-center text-xs truncate w-full p-1 bg-gray-800 rounded">
+            <div className="text-center text-xs truncate w-full p-1 rounded">
               {window.title}
             </div>
             <div className="flex-grow flex items-center justify-center text-gray-400 text-xs">
@@ -135,100 +137,36 @@ const AltQSwitcher = () => {
 
 // Pencere tipine göre simge döndüren yardımcı fonksiyon
 const getWindowIconByType = (type: string) => {
+  const {
+    tweaks: { iconPack },
+  } = useSettingsStore.getState();
+
+  let iconName: string;
   switch (type) {
     case "terminal":
-      return (
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          className="h-6 w-6"
-          fill="none"
-          viewBox="0 0 24 24"
-          stroke="currentColor"
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={2}
-            d="M8 9l3 3-3 3m5 0h3"
-          />
-        </svg>
-      );
+      iconName = "terminal";
+      break;
     case "file-manager":
-      return (
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          className="h-6 w-6"
-          fill="none"
-          viewBox="0 0 24 24"
-          stroke="currentColor"
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={2}
-            d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"
-          />
-        </svg>
-      );
+      iconName = "file-manager";
+      break;
     case "nano":
     case "text-editor":
-      return (
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          className="h-6 w-6"
-          fill="none"
-          viewBox="0 0 24 24"
-          stroke="currentColor"
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={2}
-            d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-          />
-        </svg>
-      );
+      iconName = "text-editor";
+      break;
     case "settings":
-      return (
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          className="h-6 w-6"
-          fill="none"
-          viewBox="0 0 24 24"
-          stroke="currentColor"
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={2}
-            d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"
-          />
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={2}
-            d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
-          />
-        </svg>
-      );
+      iconName = "preferences-system";
+      break;
+    case "product-manager":
+      iconName = "product-manager";
+      break;
     default:
-      return (
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          className="h-6 w-6"
-          fill="none"
-          viewBox="0 0 24 24"
-          stroke="currentColor"
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={2}
-            d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
-          />
-        </svg>
-      );
+      iconName = "text-editor"; // varsayılan bir icon
+      break;
   }
+
+  const iconPath = getIconPath(iconPack, iconName);
+
+  return <img src={iconPath} alt={`${type} icon`} className="h-12 w-12" />;
 };
 
 function App() {
