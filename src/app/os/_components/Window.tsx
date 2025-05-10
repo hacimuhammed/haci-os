@@ -1,9 +1,9 @@
-import { Button } from '@/components/ui/button';
-import { useSettingsStore } from '@/store/settingsStore';
+import { AnimatePresence, motion } from "framer-motion";
+import { useEffect, useRef, useState } from "react";
 
-import { useWindowManagerStore } from '@/store/windowManagerStore';
-import { AnimatePresence, motion } from 'framer-motion';
-import { useEffect, useRef, useState } from 'react';
+import { Button } from "@/components/ui/button";
+import { useSettingsStore } from "@/store/settingsStore";
+import { useWindowManagerStore } from "@/store/windowManagerStore";
 
 type WindowProps = {
   id: string;
@@ -54,7 +54,7 @@ const animationVariants = {
       scale: 1,
       transition: {
         duration: 0.4,
-        type: 'spring',
+        type: "spring",
         stiffness: 300,
         damping: 15,
       },
@@ -65,7 +65,7 @@ const animationVariants = {
       y: 10,
       transition: {
         duration: 0.3,
-        ease: 'easeInOut',
+        ease: "easeInOut",
       },
     },
     transition: { duration: 0.4 },
@@ -110,6 +110,13 @@ export const Window = ({
   const [size, setSize] = useState(initialSize);
   // Pencere kapanma durumu
   const [isClosing, setIsClosing] = useState(false);
+  // Tam ekran durumu
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  // Tam ekran öncesi pozisyon ve boyut
+  const [previousState, setPreviousState] = useState({
+    position: initialPosition,
+    size: initialSize,
+  });
 
   // Drag state refs
   const isDragging = useRef(false);
@@ -120,16 +127,24 @@ export const Window = ({
     mouseY: 0,
     width: 0,
     height: 0,
-    cursorType: '',
+    cursorType: "",
     initialX: 0,
     initialY: 0,
+  });
+
+  // Touch event refs for mobile support
+  const touchStartPos = useRef({
+    touchX: 0,
+    touchY: 0,
+    windowX: 0,
+    windowY: 0,
   });
 
   // Animation frame Id for cleanup
   const animationFrameId = useRef<number | null>(null);
 
   // Şu anki pencerenin zIndex'ini al
-  const currentWindow = windows.find(w => w.id === id);
+  const currentWindow = windows.find((w) => w.id === id);
   const zIndex = currentWindow?.zIndex || 1;
 
   // Pencere pozisyonunu ekran sınırları içinde tutma
@@ -149,15 +164,9 @@ export const Window = ({
     return animationVariants[selectedAnimation] || animationVariants.fade;
   };
 
-  // Pencere aktifleştirme ve öne getirme işlemi - sadece window header veya kenarlarında
+  // Pencere aktifleştirme ve öne getirme işlemi
   const handleWindowActivation = (e: React.MouseEvent) => {
-    // İçerik alanına tıklamayı ignore et, böylece içerik alanı normal şekilde çalışır
-    const contentArea = e.currentTarget.querySelector('.window-content');
-    if (contentArea?.contains(e.target as Node)) {
-      return;
-    }
-
-    // Window header veya kenarlarına tıklandığında aktifleştir
+    // Pencereye tıklandığında aktifleştir
     setActiveWindow(id);
     bringToFront(id);
   };
@@ -187,7 +196,7 @@ export const Window = ({
 
           const { x: clampedX, y: clampedY } = clampPositionToScreen(
             newX,
-            newY,
+            newY
           );
           setPosition({ x: clampedX, y: clampedY });
 
@@ -211,38 +220,38 @@ export const Window = ({
           let newY = resizeStartInfo.current.initialY;
 
           // Resize tipine göre boyutları ve pozisyonu ayarla
-          if (cursorType === 'se-resize') {
+          if (cursorType === "se-resize") {
             // Sağ alt köşe (orijinal davranış)
             newWidth = Math.max(400, resizeStartInfo.current.width + deltaX);
             newHeight = Math.max(300, resizeStartInfo.current.height + deltaY);
-          } else if (cursorType === 'sw-resize') {
+          } else if (cursorType === "sw-resize") {
             // Sol alt köşe
             newWidth = Math.max(400, resizeStartInfo.current.width - deltaX);
             newHeight = Math.max(300, resizeStartInfo.current.height + deltaY);
-            newX
-              = resizeStartInfo.current.initialX
-                + resizeStartInfo.current.width
-                - newWidth;
-          } else if (cursorType === 'ne-resize') {
+            newX =
+              resizeStartInfo.current.initialX +
+              resizeStartInfo.current.width -
+              newWidth;
+          } else if (cursorType === "ne-resize") {
             // Sağ üst köşe
             newWidth = Math.max(400, resizeStartInfo.current.width + deltaX);
             newHeight = Math.max(300, resizeStartInfo.current.height - deltaY);
-            newY
-              = resizeStartInfo.current.initialY
-                + resizeStartInfo.current.height
-                - newHeight;
-          } else if (cursorType === 'nw-resize') {
+            newY =
+              resizeStartInfo.current.initialY +
+              resizeStartInfo.current.height -
+              newHeight;
+          } else if (cursorType === "nw-resize") {
             // Sol üst köşe
             newWidth = Math.max(400, resizeStartInfo.current.width - deltaX);
             newHeight = Math.max(300, resizeStartInfo.current.height - deltaY);
-            newX
-              = resizeStartInfo.current.initialX
-                + resizeStartInfo.current.width
-                - newWidth;
-            newY
-              = resizeStartInfo.current.initialY
-                + resizeStartInfo.current.height
-                - newHeight;
+            newX =
+              resizeStartInfo.current.initialX +
+              resizeStartInfo.current.width -
+              newWidth;
+            newY =
+              resizeStartInfo.current.initialY +
+              resizeStartInfo.current.height -
+              newHeight;
           }
 
           // Ekran dışına taşmayı engelle
@@ -260,6 +269,34 @@ export const Window = ({
       }
     };
 
+    const handleTouchMove = (e: TouchEvent) => {
+      if (!isDragging.current) {
+        return;
+      }
+
+      e.preventDefault(); // Sayfanın kaydırılmasını önle
+
+      // İşlenen son animasyon varsa iptal et
+      if (animationFrameId.current !== null) {
+        cancelAnimationFrame(animationFrameId.current);
+      }
+
+      // Yeni bir animasyon frame'i iste
+      animationFrameId.current = requestAnimationFrame(() => {
+        const touch = e.touches[0];
+        const deltaX = touch.clientX - touchStartPos.current.touchX;
+        const deltaY = touch.clientY - touchStartPos.current.touchY;
+
+        const newX = touchStartPos.current.windowX + deltaX;
+        const newY = touchStartPos.current.windowY + deltaY;
+
+        const { x: clampedX, y: clampedY } = clampPositionToScreen(newX, newY);
+        setPosition({ x: clampedX, y: clampedY });
+
+        animationFrameId.current = null;
+      });
+    };
+
     const handleMouseUp = (e: MouseEvent) => {
       if (!isDragging.current && !isResizing.current) {
         return;
@@ -269,17 +306,28 @@ export const Window = ({
 
       if (isDragging.current) {
         isDragging.current = false;
-        document.body.style.cursor = '';
+        document.body.style.cursor = "";
 
         // Pencere pozisyonunu store'a kaydet
         updateWindow(id, { position });
       } else if (isResizing.current) {
         isResizing.current = false;
-        document.body.style.cursor = '';
+        document.body.style.cursor = "";
 
         // Pencere boyutunu store'a kaydet
         updateWindow(id, { size });
       }
+    };
+
+    const handleTouchEnd = (e: TouchEvent) => {
+      if (!isDragging.current) {
+        return;
+      }
+
+      isDragging.current = false;
+
+      // Pencere pozisyonunu store'a kaydet
+      updateWindow(id, { position });
     };
 
     const handleResize = () => {
@@ -289,15 +337,19 @@ export const Window = ({
       }
     };
 
-    window.addEventListener('mousemove', handleMouseMove);
-    window.addEventListener('mouseup', handleMouseUp);
-    window.addEventListener('resize', handleResize);
+    window.addEventListener("mousemove", handleMouseMove);
+    window.addEventListener("mouseup", handleMouseUp);
+    window.addEventListener("touchmove", handleTouchMove, { passive: false });
+    window.addEventListener("touchend", handleTouchEnd);
+    window.addEventListener("resize", handleResize);
 
     // Cleanup
     return () => {
-      window.removeEventListener('mousemove', handleMouseMove);
-      window.removeEventListener('mouseup', handleMouseUp);
-      window.removeEventListener('resize', handleResize);
+      window.removeEventListener("mousemove", handleMouseMove);
+      window.removeEventListener("mouseup", handleMouseUp);
+      window.removeEventListener("touchmove", handleTouchMove);
+      window.removeEventListener("touchend", handleTouchEnd);
+      window.removeEventListener("resize", handleResize);
 
       if (animationFrameId.current !== null) {
         cancelAnimationFrame(animationFrameId.current);
@@ -351,7 +403,32 @@ export const Window = ({
     };
 
     // Sürükleme işareti
-    document.body.style.cursor = 'move';
+    document.body.style.cursor = "move";
+  };
+
+  // Handle touch start for mobile drag
+  const handleTouchStart = (e: React.TouchEvent<HTMLDivElement>) => {
+    // Header'a dokunma kontrolü
+    if (!headerRef.current?.contains(e.target as Node)) {
+      return;
+    }
+
+    // Aktif pencereyi en üstte göster
+    bringToFront(id);
+
+    // Eğer bölünmüş durumdaysak, sürükleme ile bölünmeyi sonlandır
+    endSplitOnDrag(id);
+
+    const touch = e.touches[0];
+
+    // Sürükleme durumunu kaydet
+    isDragging.current = true;
+    touchStartPos.current = {
+      touchX: touch.clientX,
+      touchY: touch.clientY,
+      windowX: position.x,
+      windowY: position.y,
+    };
   };
 
   // Handle resize start
@@ -364,13 +441,13 @@ export const Window = ({
 
     // Tıklanan köşeye göre resize türünü belirle
     const target = e.currentTarget;
-    const cursorType = target.className.includes('resize-se')
-      ? 'se-resize'
-      : target.className.includes('resize-sw')
-        ? 'sw-resize'
-        : target.className.includes('resize-ne')
-          ? 'ne-resize'
-          : 'nw-resize';
+    const cursorType = target.className.includes("resize-se")
+      ? "se-resize"
+      : target.className.includes("resize-sw")
+        ? "sw-resize"
+        : target.className.includes("resize-ne")
+          ? "ne-resize"
+          : "nw-resize";
 
     // Boyutlandırma durumunu kaydet
     isResizing.current = true;
@@ -397,6 +474,44 @@ export const Window = ({
     setIsClosing(true);
   };
 
+  // Tam ekran modunu değiştir
+  const toggleFullscreen = () => {
+    if (!isFullscreen) {
+      // Tam ekran moduna geç
+      setPreviousState({
+        position: { ...position },
+        size: { ...size },
+      });
+
+      // Topbar yüksekliği (örneğin 40px)
+      const topbarHeight = 40;
+
+      setPosition({ x: 0, y: topbarHeight });
+      setSize({
+        width: window.innerWidth,
+        height: window.innerHeight - topbarHeight,
+      });
+
+      setIsFullscreen(true);
+    } else {
+      // Tam ekran modundan çık
+      setPosition(previousState.position);
+      setSize(previousState.size);
+      setIsFullscreen(false);
+    }
+
+    // Pencere durumunu güncelle
+    updateWindow(id, {
+      position: isFullscreen ? previousState.position : { x: 0, y: 40 },
+      size: isFullscreen
+        ? previousState.size
+        : {
+            width: window.innerWidth,
+            height: window.innerHeight - 40,
+          },
+    });
+  };
+
   // Window ID'sini global window nesnesine ekle - bunu içerideki uygulamalar kullanacak
   useEffect(() => {
     // Pencere ID'sini global nesnede tut
@@ -416,18 +531,18 @@ export const Window = ({
         key={id}
         ref={windowRef}
         style={{
-          position: 'absolute',
+          position: "absolute",
           width: size.width,
           height: size.height,
           left: position.x,
           top: position.y,
-          transformOrigin: 'top center',
+          transformOrigin: "top center",
           zIndex,
         }}
-        className={`rounded-lg overflow-hidden flex flex-col border-none ${
+        className={`${isFullscreen ? "" : "rounded-lg"} overflow-hidden flex flex-col border-none ${
           activeWindowId === id
-            ? 'shadow-[0_5px_30px_rgba(0,0,0,0.8)]'
-            : 'shadow-sm'
+            ? "shadow-[0_5px_30px_rgba(0,0,0,0.8)]"
+            : "shadow-sm"
         } bg-card text-card-foreground`}
         onClick={handleWindowActivation}
         // Animation properties
@@ -447,13 +562,50 @@ export const Window = ({
         <div
           ref={headerRef}
           onMouseDown={handleDragStart}
-          className="p-2 flex items-center justify-between cursor-move bg-card text-card-foreground select-none"
+          onTouchStart={handleTouchStart}
+          className="p-2 flex items-center justify-between cursor-move bg-muted text-card-foreground select-none"
         >
           <div className="flex items-center">{headerLeft}</div>
           <div className="mx-2 flex-1 text-center truncate font-medium">
             {title}
           </div>
-          <div className="flex">
+          <div className="flex gap-1">
+            <Button
+              onClick={toggleFullscreen}
+              size="icon"
+              variant="ghost"
+              className="h-6 w-6 rounded-full hover:bg-muted-foreground/20"
+            >
+              {isFullscreen ? (
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="16"
+                  height="16"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <path d="M8 3v3a2 2 0 0 1-2 2H3m18 0h-3a2 2 0 0 1-2-2V3m0 18v-3a2 2 0 0 1 2-2h3M3 16h3a2 2 0 0 1 2 2v3" />
+                </svg>
+              ) : (
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="16"
+                  height="16"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <path d="M3 8V3m0 0h5M3 3l6 6M21 8V3m0 0h-5m5 0l-6 6M3 16v5m0 0h5m-5 0l6-6m12 6v-5m0 5h-5m5 0l-6-6" />
+                </svg>
+              )}
+            </Button>
             <Button
               onClick={handleClose}
               size="icon"
@@ -484,22 +636,26 @@ export const Window = ({
         </div>
 
         {/* Resizers - Tüm köşeler için resize handle ekle */}
-        <div
-          onMouseDown={handleResizeStart}
-          className="absolute bottom-0 right-0 w-4 h-4 cursor-se-resize z-10 resize-se"
-        />
-        <div
-          onMouseDown={handleResizeStart}
-          className="absolute bottom-0 left-0 w-4 h-4 cursor-sw-resize z-10 resize-sw"
-        />
-        <div
-          onMouseDown={handleResizeStart}
-          className="absolute top-0 right-0 w-4 h-4 cursor-ne-resize z-10 resize-ne"
-        />
-        <div
-          onMouseDown={handleResizeStart}
-          className="absolute top-0 left-0 w-4 h-4 cursor-nw-resize z-10 resize-nw"
-        />
+        {!isFullscreen && (
+          <>
+            <div
+              onMouseDown={handleResizeStart}
+              className="absolute bottom-0 right-0 w-4 h-4 cursor-se-resize z-10 resize-se"
+            />
+            <div
+              onMouseDown={handleResizeStart}
+              className="absolute bottom-0 left-0 w-4 h-4 cursor-sw-resize z-10 resize-sw"
+            />
+            <div
+              onMouseDown={handleResizeStart}
+              className="absolute top-0 right-0 w-4 h-4 cursor-ne-resize z-10 resize-ne"
+            />
+            <div
+              onMouseDown={handleResizeStart}
+              className="absolute top-0 left-0 w-4 h-4 cursor-nw-resize z-10 resize-nw"
+            />
+          </>
+        )}
       </motion.div>
     </AnimatePresence>
   );
