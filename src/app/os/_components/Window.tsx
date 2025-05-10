@@ -1,4 +1,3 @@
-import { AnimatePresence, motion } from "framer-motion";
 import { useEffect, useRef, useState } from "react";
 
 import { Button } from "@/components/ui/button";
@@ -13,69 +12,6 @@ type WindowProps = {
   initialSize?: { width: number; height: number };
   headerLeft?: React.ReactNode;
   content?: React.ReactNode;
-};
-
-// Farklı animasyon türleri için varyantlar
-const animationVariants = {
-  fade: {
-    initial: { opacity: 0 },
-    animate: { opacity: 1 },
-    exit: { opacity: 0 },
-    transition: { duration: 0.2 },
-  },
-  scale: {
-    initial: { opacity: 0, scale: 0.8 },
-    animate: { opacity: 1, scale: 1 },
-    exit: { opacity: 0, scale: 0.8 },
-    transition: { duration: 0.2 },
-  },
-  slide: {
-    initial: { opacity: 0, y: 20 },
-    animate: { opacity: 1, y: 0 },
-    exit: { opacity: 0, y: 20 },
-    transition: { duration: 0.2 },
-  },
-  flip: {
-    initial: { opacity: 0, rotateX: 15 },
-    animate: { opacity: 1, rotateX: 0 },
-    exit: { opacity: 0, rotateX: 15 },
-    transition: { duration: 0.3 },
-  },
-  rotate: {
-    initial: { opacity: 0, rotate: -2 },
-    animate: { opacity: 1, rotate: 0 },
-    exit: { opacity: 0, rotate: 2 },
-    transition: { duration: 0.3 },
-  },
-  jellyfish: {
-    initial: { opacity: 0, scale: 0.7 },
-    animate: {
-      opacity: 1,
-      scale: 1,
-      transition: {
-        duration: 0.4,
-        type: "spring",
-        stiffness: 300,
-        damping: 15,
-      },
-    },
-    exit: {
-      opacity: 0,
-      scale: 0.8,
-      y: 10,
-      transition: {
-        duration: 0.3,
-        ease: "easeInOut",
-      },
-    },
-    transition: { duration: 0.4 },
-  },
-  none: {
-    initial: {},
-    animate: {},
-    exit: {},
-    transition: { duration: 0 },
-  },
 };
 
 export const Window = ({
@@ -108,8 +44,6 @@ export const Window = ({
 
   const [position, setPosition] = useState(initialPosition);
   const [size, setSize] = useState(initialSize);
-  // Pencere kapanma durumu
-  const [isClosing, setIsClosing] = useState(false);
   // Tam ekran durumu
   const [isFullscreen, setIsFullscreen] = useState(false);
   // Tam ekran öncesi pozisyon ve boyut
@@ -157,11 +91,6 @@ export const Window = ({
     const clampedY = Math.max(0, Math.min(y, windowHeight - size.height));
 
     return { x: clampedX, y: clampedY };
-  };
-
-  // Mevcut animasyon varyantlarını al
-  const getAnimationVariant = () => {
-    return animationVariants[selectedAnimation] || animationVariants.fade;
   };
 
   // Pencere aktifleştirme ve öne getirme işlemi
@@ -390,10 +319,15 @@ export const Window = ({
     // Aktif pencereyi en üstte göster
     bringToFront(id);
 
+    // Tam ekran modundayken sürüklemeyi engelle
+    if (isFullscreen) {
+      return;
+    }
+
     // Eğer bölünmüş durumdaysak, sürükleme ile bölünmeyi sonlandır
     endSplitOnDrag(id);
 
-    // Sürükleme durumunu kaydet
+    // Normal sürükleme durumunu kaydet
     isDragging.current = true;
     dragStartPos.current = {
       mouseX: e.clientX,
@@ -406,6 +340,20 @@ export const Window = ({
     document.body.style.cursor = "move";
   };
 
+  // Handle double click on header for fullscreen toggle
+  const handleHeaderDoubleClick = (e: React.MouseEvent<HTMLDivElement>) => {
+    // Header'a tıklanma kontrolü
+    if (!headerRef.current?.contains(e.target as Node)) {
+      return;
+    }
+
+    e.preventDefault();
+    e.stopPropagation();
+
+    // Tam ekran modunu değiştir
+    toggleFullscreen();
+  };
+
   // Handle touch start for mobile drag
   const handleTouchStart = (e: React.TouchEvent<HTMLDivElement>) => {
     // Header'a dokunma kontrolü
@@ -415,6 +363,11 @@ export const Window = ({
 
     // Aktif pencereyi en üstte göster
     bringToFront(id);
+
+    // Tam ekran modundayken sürüklemeyi engelle
+    if (isFullscreen) {
+      return;
+    }
 
     // Eğer bölünmüş durumdaysak, sürükleme ile bölünmeyi sonlandır
     endSplitOnDrag(id);
@@ -465,14 +418,148 @@ export const Window = ({
     document.body.style.cursor = cursorType;
   };
 
-  // Animasyon varyantını al
-  const variant = getAnimationVariant();
-
   // Pencere kapatma işlemi
   const handleClose = () => {
-    // Önce kapanma durumunu ayarla, böylece çıkış animasyonu oynatılır
-    setIsClosing(true);
+    // Animasyon seçimine göre kapatma animasyonu uygula
+    if (windowRef.current) {
+      let animation;
+
+      // Seçilen animasyon tipine göre kapanma animasyonu belirle
+      switch (selectedAnimation) {
+        case "fade":
+          animation = windowRef.current.animate(
+            [{ opacity: 1 }, { opacity: 0 }],
+            { duration: 200, easing: "ease-out", fill: "forwards" }
+          );
+          break;
+        case "scale":
+          animation = windowRef.current.animate(
+            [
+              { opacity: 1, transform: "scale(1)" },
+              { opacity: 0, transform: "scale(0.8)" },
+            ],
+            { duration: 200, easing: "ease-out", fill: "forwards" }
+          );
+          break;
+        case "slide":
+          animation = windowRef.current.animate(
+            [
+              { opacity: 1, transform: "translateY(0)" },
+              { opacity: 0, transform: "translateY(20px)" },
+            ],
+            { duration: 200, easing: "ease-out", fill: "forwards" }
+          );
+          break;
+        case "flip":
+          animation = windowRef.current.animate(
+            [
+              { opacity: 1, transform: "rotateX(0deg)" },
+              { opacity: 0, transform: "rotateX(15deg)" },
+            ],
+            { duration: 300, easing: "ease-out", fill: "forwards" }
+          );
+          break;
+        case "rotate":
+          animation = windowRef.current.animate(
+            [
+              { opacity: 1, transform: "rotate(0deg)" },
+              { opacity: 0, transform: "rotate(2deg)" },
+            ],
+            { duration: 300, easing: "ease-out", fill: "forwards" }
+          );
+          break;
+        case "jellyfish":
+          animation = windowRef.current.animate(
+            [
+              { opacity: 1, transform: "scale(1)" },
+              { opacity: 0, transform: "scale(0.8) translateY(10px)" },
+            ],
+            { duration: 300, easing: "ease-in-out", fill: "forwards" }
+          );
+          break;
+        default:
+          // Animasyon yoksa doğrudan kapat
+          removeWindow(id);
+          return;
+      }
+
+      // Animasyon bittiğinde pencereyi kapat
+      animation.onfinish = () => {
+        removeWindow(id);
+      };
+    } else {
+      removeWindow(id);
+    }
   };
+
+  // Pencere açılma animasyonu
+  useEffect(() => {
+    if (windowRef.current) {
+      // Seçilen animasyon tipine göre açılma animasyonu belirle
+      let animation;
+
+      switch (selectedAnimation) {
+        case "fade":
+          animation = windowRef.current.animate(
+            [{ opacity: 0 }, { opacity: 1 }],
+            { duration: 200, easing: "ease-out", fill: "forwards" }
+          );
+          break;
+        case "scale":
+          animation = windowRef.current.animate(
+            [
+              { opacity: 0, transform: "scale(0.8)" },
+              { opacity: 1, transform: "scale(1)" },
+            ],
+            { duration: 200, easing: "ease-out", fill: "forwards" }
+          );
+          break;
+        case "slide":
+          animation = windowRef.current.animate(
+            [
+              { opacity: 0, transform: "translateY(20px)" },
+              { opacity: 1, transform: "translateY(0)" },
+            ],
+            { duration: 200, easing: "ease-out", fill: "forwards" }
+          );
+          break;
+        case "flip":
+          animation = windowRef.current.animate(
+            [
+              { opacity: 0, transform: "rotateX(15deg)" },
+              { opacity: 1, transform: "rotateX(0deg)" },
+            ],
+            { duration: 300, easing: "ease-out", fill: "forwards" }
+          );
+          break;
+        case "rotate":
+          animation = windowRef.current.animate(
+            [
+              { opacity: 0, transform: "rotate(-2deg)" },
+              { opacity: 1, transform: "rotate(0deg)" },
+            ],
+            { duration: 300, easing: "ease-out", fill: "forwards" }
+          );
+          break;
+        case "jellyfish":
+          animation = windowRef.current.animate(
+            [
+              { opacity: 0, transform: "scale(0.7)" },
+              { opacity: 1, transform: "scale(1)" },
+            ],
+            {
+              duration: 400,
+              easing: "cubic-bezier(0.34, 1.56, 0.64, 1)", // Spring benzeri easing
+              fill: "forwards",
+            }
+          );
+          break;
+        default:
+          // Animasyon yoksa hiçbir şey yapma
+          break;
+      }
+    }
+  }, [id]); // Sadece bileşen mount edildiğinde ve ID değiştiğinde çalışsın
 
   // Tam ekran modunu değiştir
   const toggleFullscreen = () => {
@@ -486,18 +573,100 @@ export const Window = ({
       // Topbar yüksekliği (örneğin 40px)
       const topbarHeight = 40;
 
-      setPosition({ x: 0, y: topbarHeight });
-      setSize({
-        width: window.innerWidth,
-        height: window.innerHeight - topbarHeight,
-      });
-
+      // Önce state'i güncelle
       setIsFullscreen(true);
+
+      // Animasyonlu geçiş için Web Animations API kullan
+      if (windowRef.current) {
+        // Easing fonksiyonu seç
+        let easing = "cubic-bezier(0.4, 0, 0.2, 1)"; // Default easing
+        let duration = 300; // Default duration
+
+        // Seçilen animasyon tipine göre easing ve duration değerlerini ayarla
+        if (selectedAnimation === "jellyfish") {
+          easing = "cubic-bezier(0.34, 1.56, 0.64, 1)"; // Spring benzeri easing
+          duration = 400;
+        }
+
+        const controls = windowRef.current.animate(
+          [
+            {
+              left: `${position.x}px`,
+              top: `${position.y}px`,
+              width: `${size.width}px`,
+              height: `${size.height}px`,
+              borderRadius: "0.5rem",
+            },
+            {
+              left: `${0}px`,
+              top: `${topbarHeight}px`,
+              width: `${window.innerWidth}px`,
+              height: `${window.innerHeight - topbarHeight}px`,
+              borderRadius: "0",
+            },
+          ],
+          {
+            duration,
+            easing,
+            fill: "forwards",
+          }
+        );
+
+        controls.onfinish = () => {
+          setPosition({ x: 0, y: topbarHeight });
+          setSize({
+            width: window.innerWidth,
+            height: window.innerHeight - topbarHeight,
+          });
+        };
+      }
     } else {
       // Tam ekran modundan çık
-      setPosition(previousState.position);
-      setSize(previousState.size);
-      setIsFullscreen(false);
+      const prevPosition = { ...previousState.position };
+      const prevSize = { ...previousState.size };
+
+      // Animasyonlu geçiş için Web Animations API kullan
+      if (windowRef.current) {
+        // Easing fonksiyonu seç
+        let easing = "cubic-bezier(0.4, 0, 0.2, 1)"; // Default easing
+        let duration = 300; // Default duration
+
+        // Seçilen animasyon tipine göre easing ve duration değerlerini ayarla
+        if (selectedAnimation === "jellyfish") {
+          easing = "cubic-bezier(0.34, 1.56, 0.64, 1)"; // Spring benzeri easing
+          duration = 400;
+        }
+
+        const controls = windowRef.current.animate(
+          [
+            {
+              left: `${position.x}px`,
+              top: `${position.y}px`,
+              width: `${size.width}px`,
+              height: `${size.height}px`,
+              borderRadius: "0",
+            },
+            {
+              left: `${prevPosition.x}px`,
+              top: `${prevPosition.y}px`,
+              width: `${prevSize.width}px`,
+              height: `${prevSize.height}px`,
+              borderRadius: "0.5rem",
+            },
+          ],
+          {
+            duration,
+            easing,
+            fill: "forwards",
+          }
+        );
+
+        controls.onfinish = () => {
+          setPosition(prevPosition);
+          setSize(prevSize);
+          setIsFullscreen(false);
+        };
+      }
     }
 
     // Pencere durumunu güncelle
@@ -526,96 +695,49 @@ export const Window = ({
   }, [id]);
 
   return (
-    <AnimatePresence mode="wait">
-      <motion.div
-        key={id}
-        ref={windowRef}
-        style={{
-          position: "absolute",
-          width: size.width,
-          height: size.height,
-          left: position.x,
-          top: position.y,
-          transformOrigin: "top center",
-          zIndex,
-        }}
-        className={`${isFullscreen ? "" : "rounded-lg"} overflow-hidden flex flex-col border-none ${
-          activeWindowId === id
-            ? "shadow-[0_5px_30px_rgba(0,0,0,0.8)]"
-            : "shadow-sm"
-        } bg-card text-card-foreground`}
-        onClick={handleWindowActivation}
-        // Animation properties
-        initial={variant.initial}
-        animate={isClosing ? variant.exit : variant.animate}
-        exit={variant.exit}
-        transition={variant.transition}
-        onAnimationComplete={() => {
-          if (isClosing) {
-            removeWindow(id);
-          }
-        }}
-        // Window ID'si - veri özniteliği olarak ekle
-        data-window-id={id}
+    <div
+      ref={windowRef}
+      style={{
+        position: "absolute",
+        width: size.width,
+        height: size.height,
+        left: position.x,
+        top: position.y,
+        transformOrigin: "top center",
+        zIndex,
+      }}
+      className={`${isFullscreen ? "" : "rounded-lg"} overflow-hidden flex flex-col border-none ${
+        activeWindowId === id
+          ? "shadow-[0_5px_30px_rgba(0,0,0,0.8)]"
+          : "shadow-sm"
+      } bg-card text-card-foreground`}
+      onClick={handleWindowActivation}
+      data-window-id={id}
+    >
+      {/* Header */}
+      <div
+        ref={headerRef}
+        onMouseDown={handleDragStart}
+        onTouchStart={handleTouchStart}
+        onDoubleClick={handleHeaderDoubleClick}
+        className="p-2 flex items-center justify-between cursor-move bg-muted text-card-foreground select-none"
       >
-        {/* Header */}
-        <div
-          ref={headerRef}
-          onMouseDown={handleDragStart}
-          onTouchStart={handleTouchStart}
-          className="p-2 flex items-center justify-between cursor-move bg-muted text-card-foreground select-none"
-        >
-          <div className="flex items-center">{headerLeft}</div>
-          <div className="mx-2 flex-1 text-center truncate font-medium">
-            {title}
-          </div>
-          <div className="flex gap-1">
-            <Button
-              onClick={toggleFullscreen}
-              size="icon"
-              variant="ghost"
-              className="h-6 w-6 rounded-full hover:bg-muted-foreground/20"
-            >
-              {isFullscreen ? (
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="16"
-                  height="16"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-                  <path d="M8 3v3a2 2 0 0 1-2 2H3m18 0h-3a2 2 0 0 1-2-2V3m0 18v-3a2 2 0 0 1 2-2h3M3 16h3a2 2 0 0 1 2 2v3" />
-                </svg>
-              ) : (
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="16"
-                  height="16"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-                  <path d="M3 8V3m0 0h5M3 3l6 6M21 8V3m0 0h-5m5 0l-6 6M3 16v5m0 0h5m-5 0l6-6m12 6v-5m0 5h-5m5 0l-6-6" />
-                </svg>
-              )}
-            </Button>
-            <Button
-              onClick={handleClose}
-              size="icon"
-              variant="ghost"
-              className="h-6 w-6 rounded-full hover:bg-destructive hover:text-destructive-foreground"
-            >
+        <div className="flex items-center">{headerLeft}</div>
+        <div className="mx-2 flex-1 text-center truncate font-medium">
+          {title}
+        </div>
+        <div className="flex gap-1">
+          <Button
+            onClick={toggleFullscreen}
+            size="icon"
+            variant="ghost"
+            className="h-6 w-6 rounded-full hover:bg-muted-foreground/20"
+          >
+            {isFullscreen ? (
               <svg
                 xmlns="http://www.w3.org/2000/svg"
-                width="18"
-                height="18"
+                width="16"
+                height="16"
                 viewBox="0 0 24 24"
                 fill="none"
                 stroke="currentColor"
@@ -623,40 +745,74 @@ export const Window = ({
                 strokeLinecap="round"
                 strokeLinejoin="round"
               >
-                <line x1="18" y1="6" x2="6" y2="18" />
-                <line x1="6" y1="6" x2="18" y2="18" />
+                <path d="M8 3v3a2 2 0 0 1-2 2H3m18 0h-3a2 2 0 0 1-2-2V3m0 18v-3a2 2 0 0 1 2-2h3M3 16h3a2 2 0 0 1 2 2v3" />
               </svg>
-            </Button>
-          </div>
+            ) : (
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <path d="M3 8V3m0 0h5M3 3l6 6M21 8V3m0 0h-5m5 0l-6 6M3 16v5m0 0h5m-5 0l6-6m12 6v-5m0 5h-5m5 0l-6-6" />
+              </svg>
+            )}
+          </Button>
+          <Button
+            onClick={handleClose}
+            size="icon"
+            variant="ghost"
+            className="h-6 w-6 rounded-full hover:bg-destructive hover:text-destructive-foreground"
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="18"
+              height="18"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <line x1="18" y1="6" x2="6" y2="18" />
+              <line x1="6" y1="6" x2="18" y2="18" />
+            </svg>
+          </Button>
         </div>
+      </div>
 
-        {/* Content */}
-        <div className="flex-1 overflow-auto p-0 window-content">
-          {content || children}
-        </div>
+      {/* Content */}
+      <div className="flex-1 overflow-auto p-0 window-content">
+        {content || children}
+      </div>
 
-        {/* Resizers - Tüm köşeler için resize handle ekle */}
-        {!isFullscreen && (
-          <>
-            <div
-              onMouseDown={handleResizeStart}
-              className="absolute bottom-0 right-0 w-4 h-4 cursor-se-resize z-10 resize-se"
-            />
-            <div
-              onMouseDown={handleResizeStart}
-              className="absolute bottom-0 left-0 w-4 h-4 cursor-sw-resize z-10 resize-sw"
-            />
-            <div
-              onMouseDown={handleResizeStart}
-              className="absolute top-0 right-0 w-4 h-4 cursor-ne-resize z-10 resize-ne"
-            />
-            <div
-              onMouseDown={handleResizeStart}
-              className="absolute top-0 left-0 w-4 h-4 cursor-nw-resize z-10 resize-nw"
-            />
-          </>
-        )}
-      </motion.div>
-    </AnimatePresence>
+      {/* Resizers - Tüm köşeler için resize handle ekle */}
+      {!isFullscreen && (
+        <>
+          <div
+            onMouseDown={handleResizeStart}
+            className="absolute bottom-0 right-0 w-4 h-4 cursor-se-resize z-10 resize-se"
+          />
+          <div
+            onMouseDown={handleResizeStart}
+            className="absolute bottom-0 left-0 w-4 h-4 cursor-sw-resize z-10 resize-sw"
+          />
+          <div
+            onMouseDown={handleResizeStart}
+            className="absolute top-0 right-0 w-4 h-4 cursor-ne-resize z-10 resize-ne"
+          />
+          <div
+            onMouseDown={handleResizeStart}
+            className="absolute top-0 left-0 w-4 h-4 cursor-nw-resize z-10 resize-nw"
+          />
+        </>
+      )}
+    </div>
   );
 };

@@ -5,10 +5,10 @@ alwaysApply: true
 ---
 # Açıklama
 Uygulamanın çalışması için yapılması gereken güncellemeleri içeren mark down listesi.
-
+Güncellemeleri gerçekleştirdikten sonra todo listesinden tamamlanmış işaretle.
 # Kullanım klavuzu
 [x] ile başlayan satırlar bitmiş todoları,
-[x] ile başlayan satırlar henüz başlanmamış satırları belirtiyor.
+[ ] ile başlayan satırlar henüz başlanmamış satırları belirtiyor.
 
 # Todo List
 
@@ -16,7 +16,7 @@ Uygulamanın çalışması için yapılması gereken güncellemeleri içeren mar
 [x] [Window.tsx](mdc:src/components/Window.tsx) yeniden boyutlandırma işlemi şuan sadece sağ alt'dan çalışyıor, pencerenin sol üst, sağ üst, sağ alt, sol alt'dan da yeniden boyutlandırılabilir olmalı.
 [x] [Window.tsx](mdc:src/components/Window.tsx) Window'ların her birine bir zIndex değeri tutulmalı, kaç tane açık pencere varsa ona göre diğer pencerelerin de en son aktif olan pencere en üstte olacak şekilde sıralanması gerekiyor.
 [x] [Window.tsx](mdc:src/components/Window.tsx) Jellyfish animasyonu eklenmeli.
-[ ] [Window.tsx](mdc:src/components/Window.tsx) Pencere kapanırken animasyon oynamıyor, pencere kapanmasında'da animasyon olmalı
+[x] [Window.tsx](mdc:src/components/Window.tsx) Pencere kapanırken animasyon oynamıyor, pencere kapanmasında'da animasyon olmalı
 ## Settings App
 [x] [SettingsPanel.tsx](mdc:src/components/SettingsPanel.tsx) sayfadaki düz html bileşeni yerine shadcn select selecti kullanılmalı.
 [x] [SettingsPanel.tsx](mdc:src/components/SettingsPanel.tsx) Animasyon önizlemesi, animasyonu test et butonu çalışmıyor, çalışır olmalı.
