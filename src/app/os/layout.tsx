@@ -2,6 +2,9 @@ import { GDM } from "./_components/GDM";
 import React from "react";
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
+
+export const dynamic = "force-dynamic";
+
 const OSLayout = async ({ children }: { children: React.ReactNode }) => {
   try {
     const session = await auth.api.listDeviceSessions({
