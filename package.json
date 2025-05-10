@@ -2,13 +2,13 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "prisma generate && next build",
+    "build": "next build",
     "start": "next start",
     "lint": "next lint",
     "lint:fix": "next lint --fix",
     "eslint": "eslint .",
     "eslint:fix": "eslint . --fix",
-    "postinstall": "prisma generate"
+    "postinstall": "prisma generate --no-engine"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.0.1",
