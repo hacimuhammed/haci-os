@@ -22,17 +22,19 @@ export default function Home() {
           >
             haciOS
           </Link>
-          <Button
-            size="sm"
-            className="bg-gradient-to-r from-blue-600 to-violet-600 hover:opacity-90 transition-all font-bold px-5"
-          >
-            Try Now
-          </Button>
+          <Link href="/os">
+            <Button
+              size="sm"
+              className="bg-gradient-to-r from-blue-600 to-violet-600 hover:opacity-90 transition-all font-bold px-5"
+            >
+              Try Now
+            </Button>
+          </Link>
         </div>
       </header>
 
       {/* Hero Bölümü */}
-      <section className="relative h-screen flex flex-col items-center justify-center overflow-hidden bg-gradient-to-b from-black to-zinc-900 text-white pt-16">
+      <section className=" relative h-screen flex flex-col items-center justify-center overflow-hidden bg-gradient-to-b from-black to-zinc-900 text-white pt-64">
         {/* Arkaplan animasyonu için */}
         <div className="absolute inset-0 bg-grid-white/5 [mask-image:linear-gradient(to_bottom,transparent,black,transparent)] z-0"></div>
         <div className="absolute inset-0 flex items-center justify-center">
@@ -48,42 +50,39 @@ export default function Home() {
                   <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-sky-400 opacity-75"></span>
                   <span className="relative inline-flex rounded-full h-2 w-2 bg-sky-500"></span>
                 </span>
-                <span>Dünyada İlk</span>
+                <span>Worlds First</span>
               </div>
             </div>
-            <h1 className="text-5xl md:text-7xl font-bold tracking-tighter bg-clip-text text-transparent bg-gradient-to-r from-white via-blue-500 to-violet-500">
-              haciOS
-            </h1>
+            <div>
+              <a className="text-7xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-white via-blue-500 to-violet-500">
+                haciOS
+              </a>
+            </div>
             <p className="text-xl md:text-2xl text-zinc-400 max-w-3xl mx-auto mt-6">
-              Cloud'a bağlı, web tabanlı, yapay zeka destekli yeni nesil işletim
-              sistemi
+              Connect to the cloud, web-based, AI-powered, next-generation
+              operating system for your company.
             </p>
           </div>
 
           <div className="flex flex-col md:flex-row gap-4 mt-10">
-            <Button
-              size="lg"
-              className="bg-gradient-to-r from-blue-600 to-violet-600 hover:opacity-90 transition-all px-8 font-bold"
-            >
-              Şimdi Deneyin
-            </Button>
-            <Button
-              variant="outline"
-              size="lg"
-              className="bg-zinc-900/60 border-zinc-700 text-white hover:bg-zinc-800/70 backdrop-blur-sm px-8 font-bold"
-            >
-              Daha Fazla Bilgi
-            </Button>
+            <Link href="/os">
+              <Button
+                size="lg"
+                className="bg-gradient-to-r from-blue-600 to-violet-600 hover:opacity-90 transition-all px-8 font-bold h-14 rounded-full"
+              >
+                Try Now
+              </Button>
+            </Link>
           </div>
 
           <div className="mt-16 relative w-full max-w-5xl">
-            <div className="absolute -inset-1 bg-gradient-to-r from-violet-600 to-blue-600 rounded-lg blur opacity-25"></div>
-            <div className="relative bg-zinc-900 border border-zinc-800 rounded-lg overflow-hidden">
+            <div className="absolute -inset-1 opacity-20"></div>
+            <div className="relative bg-zinc-900 border border-zinc-800 rounded-lg overflow-visible">
               <Image
-                src="/wallpapers/Plucky_Puffin_Dark.webp"
+                src="/landing/landing.png"
                 alt="haciOS Arayüzü"
-                width={1200}
-                height={675}
+                width={1920}
+                height={1080}
                 className="w-full h-auto rounded-lg shadow-2xl"
                 priority
               />
@@ -117,11 +116,11 @@ export default function Home() {
         <div className="container mx-auto px-6 md:px-10">
           <div className="text-center max-w-3xl mx-auto mb-20">
             <h2 className="text-3xl md:text-5xl font-bold mb-6">
-              Geleceğin İşletim Sistemi
+              The Future of Operating Systems
             </h2>
             <p className="text-zinc-400 text-lg max-w-2xl mx-auto">
-              Bulut tabanlı, yapay zeka destekli ve tamamen web üzerinde çalışan
-              modern işletim sistemi deneyimi
+              Cloud-based, AI-powered, and web-based modern operating system
+              experience
             </p>
           </div>
 
@@ -130,10 +129,10 @@ export default function Home() {
               <div className="bg-blue-500/10 p-3 rounded-lg w-12 h-12 flex items-center justify-center mb-5">
                 <LucideCloudCog className="text-blue-500" size={24} />
               </div>
-              <h3 className="text-xl font-semibold mb-3">Bulut Tabanlı</h3>
+              <h3 className="text-xl font-semibold mb-3">Cloud-Based</h3>
               <p className="text-zinc-400">
-                Verilerin ve ayarların bulutta saklanır, tüm cihazlar arasında
-                sorunsuz senkronize edilir.
+                Data and settings are stored in the cloud, and are seamlessly
+                synchronized across all devices.
               </p>
             </div>
 
@@ -141,10 +140,10 @@ export default function Home() {
               <div className="bg-violet-500/10 p-3 rounded-lg w-12 h-12 flex items-center justify-center mb-5">
                 <LucideCommand className="text-violet-500" size={24} />
               </div>
-              <h3 className="text-xl font-semibold mb-3">AI Destekli</h3>
+              <h3 className="text-xl font-semibold mb-3">AI-Powered</h3>
               <p className="text-zinc-400">
-                Yapay zeka asistanı ile görevlerinizi hızlandırın ve
-                üretkenliğinizi artırın.
+                Accelerate your tasks and increase your productivity with an AI
+                assistant.
               </p>
             </div>
 
@@ -152,10 +151,10 @@ export default function Home() {
               <div className="bg-sky-500/10 p-3 rounded-lg w-12 h-12 flex items-center justify-center mb-5">
                 <LucideServer className="text-sky-500" size={24} />
               </div>
-              <h3 className="text-xl font-semibold mb-3">Web Tabanlı</h3>
+              <h3 className="text-xl font-semibold mb-3">Web-Based</h3>
               <p className="text-zinc-400">
-                Herhangi bir tarayıcıdan erişin, kuruluma gerek yok, anında
-                çalışmaya başlayın.
+                Access from any browser, no installation required, start working
+                immediately.
               </p>
             </div>
 
@@ -163,10 +162,9 @@ export default function Home() {
               <div className="bg-emerald-500/10 p-3 rounded-lg w-12 h-12 flex items-center justify-center mb-5">
                 <LucideCpu className="text-emerald-500" size={24} />
               </div>
-              <h3 className="text-xl font-semibold mb-3">Yüksek Performans</h3>
+              <h3 className="text-xl font-semibold mb-3">High Performance</h3>
               <p className="text-zinc-400">
-                Optimum kaynak kullanımı ile her cihazda akıcı bir deneyim
-                sağlar.
+                Optimize resource usage for optimal performance on all devices.
               </p>
             </div>
 
@@ -174,23 +172,22 @@ export default function Home() {
               <div className="bg-amber-500/10 p-3 rounded-lg w-12 h-12 flex items-center justify-center mb-5">
                 <LucideShield className="text-amber-500" size={24} />
               </div>
-              <h3 className="text-xl font-semibold mb-3">Güvenli</h3>
+              <h3 className="text-xl font-semibold mb-3">Secure</h3>
               <p className="text-zinc-400">
-                Uçtan uca şifreleme ve modern güvenlik protokolleriyle
-                verileriniz koruma altında.
+                Data is encrypted and protected with modern security protocols.
               </p>
             </div>
 
             <div className="bg-gradient-to-br from-zinc-900 to-zinc-800 p-8 rounded-xl border border-zinc-800 hover:border-zinc-700 transition-all group">
               <div className="text-center flex flex-col items-center justify-center h-full">
                 <p className="text-xl font-semibold mb-4 text-zinc-300">
-                  Ve daha fazlası...
+                  And more...
                 </p>
                 <Button
                   variant="ghost"
                   className="text-blue-400 group-hover:text-blue-300 group-hover:underline font-bold"
                 >
-                  Tüm Özellikleri Keşfedin
+                  Discover All Features
                 </Button>
               </div>
             </div>
@@ -204,17 +201,17 @@ export default function Home() {
         <div className="container mx-auto px-6 md:px-10 relative z-10">
           <div className="max-w-3xl mx-auto text-center">
             <h2 className="text-3xl md:text-5xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-violet-400 mb-6">
-              Geleceğin İşletim Sistemini Şimdi Deneyin
+              Try the Future of Operating Systems Now
             </h2>
             <p className="text-zinc-400 text-lg mb-10">
-              Tamamen ücretsiz olarak kaydolun, bulut tabanlı işletim
-              sisteminizi kurun ve geleceğin teknolojisini bugün deneyimleyin.
+              Sign up for free, install the cloud-based operating system and
+              experience the future of technology today.
             </p>
             <Button
               size="lg"
               className="bg-gradient-to-r from-blue-600 to-violet-600 hover:opacity-90 transition-all px-10 font-bold"
             >
-              Hemen Başlayın
+              Start Now
             </Button>
           </div>
         </div>
@@ -225,26 +222,28 @@ export default function Home() {
         <div className="container mx-auto px-6 md:px-10">
           <div className="flex flex-col md:flex-row justify-between items-center">
             <div className="mb-6 md:mb-0">
-              <p className="text-sm">© 2024 haciOS. Tüm hakları saklıdır.</p>
+              <p className="text-sm">
+                © {new Date().getFullYear()} haciOS. All rights reserved.
+              </p>
             </div>
             <div className="flex space-x-6">
               <a
                 href="#"
                 className="text-zinc-400 hover:text-white transition-colors"
               >
-                Gizlilik
+                Privacy
               </a>
               <a
                 href="#"
                 className="text-zinc-400 hover:text-white transition-colors"
               >
-                Şartlar
+                Terms
               </a>
               <a
                 href="#"
                 className="text-zinc-400 hover:text-white transition-colors"
               >
-                İletişim
+                Contact
               </a>
             </div>
           </div>

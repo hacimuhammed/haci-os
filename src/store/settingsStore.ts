@@ -28,16 +28,20 @@ type SettingsState = {
   appearance: AppearanceSettings;
   system: SystemSettings;
   tweaks: TweaksSettings;
-  setWallpaper: (path: string) => void;
-  setLanguage: (language: string) => void;
-  setTimeFormat: (format: "12h" | "24h") => void;
-  setIconPack: (iconPack: string) => void;
-  setWindowAnimation: (animation: WindowAnimationType) => void;
+  userId: string | null;
+  isLoading: boolean;
+  hasInitialized: boolean;
+  setWallpaper: (path: string) => Promise<void>;
+  setLanguage: (language: string) => Promise<void>;
+  setTimeFormat: (format: "12h" | "24h") => Promise<void>;
+  setIconPack: (iconPack: string) => Promise<void>;
+  setWindowAnimation: (animation: WindowAnimationType) => Promise<void>;
+  initializeSettings: (userId: string) => Promise<void>;
 };
 
 export const useSettingsStore = create<SettingsState>()(
   persist(
-    (set) => ({
+    (set, get) => ({
       appearance: {
         wallpaperPath: "/wallpapers/Plucky_Puffin.webp",
       },
@@ -49,7 +53,42 @@ export const useSettingsStore = create<SettingsState>()(
         iconPack: "whitesur-light",
         windowAnimation: "fade",
       },
-      setWallpaper: (path) => {
+      userId: null,
+      isLoading: false,
+      hasInitialized: false,
+
+      initializeSettings: async (userId: string) => {
+        set({ isLoading: true });
+        try {
+          const response = await fetch(`/api/settings`);
+          if (response.ok) {
+            const settings = await response.json();
+            set({
+              appearance: {
+                wallpaperPath: settings.wallpaperPath,
+              },
+              system: {
+                language: settings.language,
+                timeFormat: settings.timeFormat as "12h" | "24h",
+              },
+              tweaks: {
+                iconPack: settings.iconPack,
+                windowAnimation:
+                  settings.windowAnimation as WindowAnimationType,
+              },
+              userId,
+              hasInitialized: true,
+            });
+          }
+        } catch (error) {
+          console.error("Ayarlar yüklenirken bir hata oluştu:", error);
+        } finally {
+          set({ isLoading: false });
+        }
+      },
+
+      setWallpaper: async (path) => {
+        const { userId } = get();
         set((state) => ({
           ...state,
           appearance: {
@@ -57,8 +96,25 @@ export const useSettingsStore = create<SettingsState>()(
             wallpaperPath: path,
           },
         }));
+
+        if (userId) {
+          try {
+            await fetch(`/api/settings`, {
+              method: "PATCH",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ wallpaperPath: path }),
+            });
+          } catch (error) {
+            console.error(
+              "Duvar kağıdı güncellenirken bir hata oluştu:",
+              error
+            );
+          }
+        }
       },
-      setLanguage: (language) => {
+
+      setLanguage: async (language) => {
+        const { userId } = get();
         set((state) => ({
           ...state,
           system: {
@@ -66,8 +122,22 @@ export const useSettingsStore = create<SettingsState>()(
             language,
           },
         }));
+
+        if (userId) {
+          try {
+            await fetch(`/api/settings`, {
+              method: "PATCH",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ language }),
+            });
+          } catch (error) {
+            console.error("Dil güncellenirken bir hata oluştu:", error);
+          }
+        }
       },
-      setTimeFormat: (format) => {
+
+      setTimeFormat: async (format) => {
+        const { userId } = get();
         set((state) => ({
           ...state,
           system: {
@@ -75,8 +145,25 @@ export const useSettingsStore = create<SettingsState>()(
             timeFormat: format,
           },
         }));
+
+        if (userId) {
+          try {
+            await fetch(`/api/settings`, {
+              method: "PATCH",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ timeFormat: format }),
+            });
+          } catch (error) {
+            console.error(
+              "Zaman formatı güncellenirken bir hata oluştu:",
+              error
+            );
+          }
+        }
       },
-      setIconPack: (iconPack) => {
+
+      setIconPack: async (iconPack) => {
+        const { userId } = get();
         set((state) => ({
           ...state,
           tweaks: {
@@ -84,9 +171,22 @@ export const useSettingsStore = create<SettingsState>()(
             iconPack,
           },
         }));
+
+        if (userId) {
+          try {
+            await fetch(`/api/settings`, {
+              method: "PATCH",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ iconPack }),
+            });
+          } catch (error) {
+            console.error("İkon paketi güncellenirken bir hata oluştu:", error);
+          }
+        }
       },
-      setWindowAnimation: (windowAnimation) => {
-        console.log(windowAnimation);
+
+      setWindowAnimation: async (windowAnimation) => {
+        const { userId } = get();
         set((state) => ({
           ...state,
           tweaks: {
@@ -94,6 +194,21 @@ export const useSettingsStore = create<SettingsState>()(
             windowAnimation,
           },
         }));
+
+        if (userId) {
+          try {
+            await fetch(`/api/settings`, {
+              method: "PATCH",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ windowAnimation }),
+            });
+          } catch (error) {
+            console.error(
+              "Pencere animasyonu güncellenirken bir hata oluştu:",
+              error
+            );
+          }
+        }
       },
     }),
     {

@@ -12,17 +12,33 @@ datasource db {
 }
 
 model User {
-  id            String    @id
+  id            String       @id
   name          String
-  email         String    @unique
+  email         String       @unique
   emailVerified Boolean
   image         String?
   createdAt     DateTime
   updatedAt     DateTime
   accounts      Account[]
   sessions      Session[]
+  settings      UserSettings?
 
   @@map("user")
+}
+
+model UserSettings {
+  id              String    @id @default(uuid())
+  userId          String    @unique
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  wallpaperPath   String    @default("/wallpapers/Plucky_Puffin.webp")
+  language        String    @default("en")
+  timeFormat      String    @default("24h")
+  iconPack        String    @default("whitesur-light")
+  windowAnimation String    @default("fade")
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@map("user_settings")
 }
 
 model Session {
