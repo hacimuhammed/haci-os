@@ -2,7 +2,6 @@ import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 import { PrismaClient } from "@prisma/client";
 import { auth } from "./lib/auth";
-import { prisma } from "./lib/prisma";
 
 export async function middleware(request: NextRequest) {
   // const session = await auth.api.getSession({
