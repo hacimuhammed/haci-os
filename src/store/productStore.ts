@@ -1,9 +1,9 @@
-import { create } from "zustand";
-import { persist } from "zustand/middleware";
-import { v4 as uuidv4 } from "uuid";
+import { v4 as uuidv4 } from 'uuid';
+import { create } from 'zustand';
+import { persist } from 'zustand/middleware';
 
 // Ürün için interface tanımı
-export interface Product {
+export type Product = {
   id: string;
   title: string;
   slug: string;
@@ -14,31 +14,31 @@ export interface Product {
   sku: string;
   createdAt: number;
   updatedAt: number;
-}
+};
 
 // Store için interface tanımı
-interface ProductStoreState {
+type ProductStoreState = {
   products: Product[];
   // CRUD İşlemleri
   addProduct: (
-    product: Omit<Product, "id" | "slug" | "createdAt" | "updatedAt">
+    product: Omit<Product, 'id' | 'slug' | 'createdAt' | 'updatedAt'>
   ) => string;
   updateProduct: (
     id: string,
-    updates: Partial<Omit<Product, "id" | "slug" | "createdAt" | "updatedAt">>
+    updates: Partial<Omit<Product, 'id' | 'slug' | 'createdAt' | 'updatedAt'>>
   ) => void;
   deleteProduct: (id: string) => void;
   getProduct: (id: string) => Product | undefined;
-}
+};
 
 // Slug oluşturma yardımcı fonksiyonu
 export const createSlug = (title: string): string => {
   // Title'ı küçük harfe çevir ve özel karakterleri kaldır
   const baseSlug = title
     .toLowerCase()
-    .replace(/[^\w\s-]/g, "") // Alfanumerik olmayan karakterleri sil
-    .replace(/[\s_-]+/g, "-") // Boşlukları tire ile değiştir
-    .replace(/^-+|-+$/g, ""); // Baştaki ve sondaki tireleri kaldır
+    .replace(/[^\w\s-]/g, '') // Alfanumerik olmayan karakterleri sil
+    .replace(/[\s_-]+/g, '-') // Boşlukları tire ile değiştir
+    .replace(/^-+|-+$/g, ''); // Baştaki ve sondaki tireleri kaldır
 
   // Base-36 timestamp kodu oluştur
   const timestamp = Date.now().toString(36);
@@ -63,7 +63,7 @@ export const useProductStore = create<ProductStoreState>()(
           updatedAt: timestamp,
         };
 
-        set((state) => ({
+        set(state => ({
           products: [...state.products, product],
         }));
 
@@ -71,32 +71,32 @@ export const useProductStore = create<ProductStoreState>()(
       },
 
       updateProduct: (id, updates) => {
-        set((state) => ({
-          products: state.products.map((product) =>
+        set(state => ({
+          products: state.products.map(product =>
             product.id === id
               ? {
                   ...product,
                   ...updates,
                   updatedAt: Date.now(),
                 }
-              : product
+              : product,
           ),
         }));
       },
 
       deleteProduct: (id) => {
-        set((state) => ({
-          products: state.products.filter((product) => product.id !== id),
+        set(state => ({
+          products: state.products.filter(product => product.id !== id),
         }));
       },
 
       getProduct: (id) => {
-        return get().products.find((product) => product.id === id);
+        return get().products.find(product => product.id === id);
       },
     }),
     {
-      name: "product-storage",
+      name: 'product-storage',
       skipHydration: true,
-    }
-  )
+    },
+  ),
 );

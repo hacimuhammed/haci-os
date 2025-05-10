@@ -1,29 +1,29 @@
 // İkon verileri için tip tanımlamaları
 type IconName =
-  | "terminal"
-  | "file-manager"
-  | "text-editor"
-  | "preferences-system"
-  | "product-manager";
-type IconPackName = "whitesur-light" | "reversal-dark";
+  | 'terminal'
+  | 'file-manager'
+  | 'text-editor'
+  | 'preferences-system'
+  | 'product-manager';
+type IconPackName = 'whitesur-light' | 'reversal-dark';
 type IconPack = Record<IconName, string>;
 type IconPathsType = Record<IconPackName, IconPack>;
 
 // İkon paketlerine göre uygulama ikonlarının yollarını tutan nesne
 export const iconPaths: IconPathsType = {
-  "whitesur-light": {
-    terminal: "/icons/whitesur-light/terminal.svg",
-    "file-manager": "/icons/whitesur-light/file-manager.svg",
-    "text-editor": "/icons/whitesur-light/text-editor.svg",
-    "preferences-system": "/icons/whitesur-light/preferences-system.svg",
-    "product-manager": "/icons/whitesur-light/web-browser.svg",
+  'whitesur-light': {
+    'terminal': '/icons/whitesur-light/terminal.svg',
+    'file-manager': '/icons/whitesur-light/file-manager.svg',
+    'text-editor': '/icons/whitesur-light/text-editor.svg',
+    'preferences-system': '/icons/whitesur-light/preferences-system.svg',
+    'product-manager': '/icons/whitesur-light/web-browser.svg',
   },
-  "reversal-dark": {
-    terminal: "/icons/reversal-dark/terminal.svg",
-    "file-manager": "/icons/reversal-dark/file-manager.svg",
-    "text-editor": "/icons/reversal-dark/text-editor.svg",
-    "preferences-system": "/icons/reversal-dark/preferences-system.svg",
-    "product-manager": "/icons/reversal-dark/web-browser-symbolic.svg",
+  'reversal-dark': {
+    'terminal': '/icons/reversal-dark/terminal.svg',
+    'file-manager': '/icons/reversal-dark/file-manager.svg',
+    'text-editor': '/icons/reversal-dark/text-editor.svg',
+    'preferences-system': '/icons/reversal-dark/preferences-system.svg',
+    'product-manager': '/icons/reversal-dark/web-browser-symbolic.svg',
   },
 };
 
@@ -36,5 +36,5 @@ export const getIconPath = (iconPack: string, iconName: string): string => {
 
   // Varsayılan olarak bir placeholder dönebilir veya hata fırlatabilir
   console.warn(`İkon bulunamadı: ${iconPack}/${iconName}`);
-  return "/icons/placeholder.svg";
+  return '/icons/placeholder.svg';
 };

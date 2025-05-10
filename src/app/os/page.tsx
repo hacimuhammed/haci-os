@@ -1,30 +1,32 @@
-import { AnimatePresence, motion } from "framer-motion";
+'use client';
+
+import { useThemeStore } from '@/store/themeStore';
+import { useUserStore } from '@/store/userStore';
+import { useWindowManagerStore } from '@/store/windowManagerStore';
+
+import { AnimatePresence, motion } from 'framer-motion';
+import { useEffect, useRef, useState } from 'react';
+import { AnimationPreview } from './_components/AnimationPreview';
+import { FileManager } from './_components/apps/FileManager';
+import { Nano } from './_components/apps/Nano';
+import { ProductManager } from './_components/apps/ProductManager';
+import { SettingsPanel } from './_components/apps/SettingsPanel';
+import { Terminal } from './_components/apps/Terminal';
 import {
   TextEditor,
   TextEditorHeaderTools,
-} from "./components/apps/TextEditor";
-import { useEffect, useRef, useState } from "react";
-
-import { AnimationPreview } from "./components/AnimationPreview";
-import { DashToDock } from "./components/DashToDock";
-import { Desktop } from "./components/Desktop";
-import { FileManager } from "./components/apps/FileManager";
-import { GDM } from "./components/GDM";
-import { Nano } from "./components/apps/Nano";
-import { ProductManager } from "./components/apps/ProductManager";
-import { SettingsPanel } from "./components/apps/SettingsPanel";
-import { SystemContextMenu } from "./components/SystemContextMenu";
-import { Terminal } from "./components/apps/Terminal";
-import { Topbar } from "./components/Topbar";
-import { Window } from "./components/Window";
-import { useThemeStore } from "./store/themeStore";
-import { useUserStore } from "./store/userStore";
-import { useWindowManagerStore } from "./store/windowManagerStore";
+} from './_components/apps/TextEditor';
+import { DashToDock } from './_components/DashToDock';
+import { Desktop } from './_components/Desktop';
+import { GDM } from './_components/GDM';
+import { SystemContextMenu } from './_components/SystemContextMenu';
+import { Topbar } from './_components/Topbar';
+import { Window } from './_components/Window';
 
 // Ekran Bölücü Bileşeni
 const Splitter = () => {
-  const { splitterPosition, updateSplitterPosition, isSplitterVisible } =
-    useWindowManagerStore();
+  const { splitterPosition, updateSplitterPosition, isSplitterVisible }
+    = useWindowManagerStore();
 
   const [isDragging, setIsDragging] = useState(false);
   const splitterRef = useRef<HTMLDivElement>(null);
@@ -36,7 +38,9 @@ const Splitter = () => {
 
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
-      if (!isDragging) return;
+      if (!isDragging) {
+        return;
+      }
 
       // Fareye göre splitter pozisyonunu hesapla
       const screenWidth = window.innerWidth;
@@ -50,27 +54,29 @@ const Splitter = () => {
       setIsDragging(false);
     };
 
-    window.addEventListener("mousemove", handleMouseMove);
-    window.addEventListener("mouseup", handleMouseUp);
+    window.addEventListener('mousemove', handleMouseMove);
+    window.addEventListener('mouseup', handleMouseUp);
 
     return () => {
-      window.removeEventListener("mousemove", handleMouseMove);
-      window.removeEventListener("mouseup", handleMouseUp);
+      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('mouseup', handleMouseUp);
     };
   }, [isDragging, updateSplitterPosition]);
 
-  if (!isSplitterVisible) return null;
+  if (!isSplitterVisible) {
+    return null;
+  }
 
   return (
     <div
       ref={splitterRef}
       className={`absolute top-0 bottom-0 w-1 bg-blue-500 cursor-col-resize z-[101] ${
-        isDragging ? "opacity-100" : "opacity-50 hover:opacity-100"
+        isDragging ? 'opacity-100' : 'opacity-50 hover:opacity-100'
       }`}
       style={{
         left: `${splitterPosition}%`,
-        height: "calc(100% - 80px)", // Topbar'ı ve DashToDock'u hesaba katarak
-        top: "40px", // Topbar'ın yüksekliğini hesaba katarak
+        height: 'calc(100% - 80px)', // Topbar'ı ve DashToDock'u hesaba katarak
+        top: '40px', // Topbar'ın yüksekliğini hesaba katarak
       }}
       onMouseDown={handleMouseDown}
     >
@@ -85,10 +91,12 @@ const AltQSwitcher = () => {
 
   // z-index'e göre sıralanmış görünür pencereler
   const visibleWindows = windows
-    .filter((w) => !w.isMinimized)
+    .filter(w => !w.isMinimized)
     .sort((a, b) => b.zIndex - a.zIndex);
 
-  if (!isAltQOpen || visibleWindows.length === 0) return null;
+  if (!isAltQOpen || visibleWindows.length === 0) {
+    return null;
+  }
 
   return (
     <motion.div
@@ -108,8 +116,8 @@ const AltQSwitcher = () => {
             key={window.id}
             className={`w-32 h-24 rounded-md border-2 overflow-hidden relative transition-all cursor-pointer flex flex-col items-center justify-center p-2 ${
               index === selectedWindowIndex
-                ? "border-blue-500 scale-110 shadow-md"
-                : "border-gray-700"
+                ? 'border-blue-500 scale-110 shadow-md'
+                : 'border-gray-700'
             }`}
           >
             <div className="text-center text-xs truncate w-full p-1 bg-gray-800 rounded">
@@ -128,7 +136,7 @@ const AltQSwitcher = () => {
 // Pencere tipine göre simge döndüren yardımcı fonksiyon
 const getWindowIconByType = (type: string) => {
   switch (type) {
-    case "terminal":
+    case 'terminal':
       return (
         <svg
           xmlns="http://www.w3.org/2000/svg"
@@ -145,7 +153,7 @@ const getWindowIconByType = (type: string) => {
           />
         </svg>
       );
-    case "file-manager":
+    case 'file-manager':
       return (
         <svg
           xmlns="http://www.w3.org/2000/svg"
@@ -162,8 +170,8 @@ const getWindowIconByType = (type: string) => {
           />
         </svg>
       );
-    case "nano":
-    case "text-editor":
+    case 'nano':
+    case 'text-editor':
       return (
         <svg
           xmlns="http://www.w3.org/2000/svg"
@@ -180,7 +188,7 @@ const getWindowIconByType = (type: string) => {
           />
         </svg>
       );
-    case "settings":
+    case 'settings':
       return (
         <svg
           xmlns="http://www.w3.org/2000/svg"
@@ -249,18 +257,18 @@ function App() {
   // Tema başlatma
   useEffect(() => {
     // Kullanıcı tercihini yerel depolamadan kontrolü
-    const savedTheme = localStorage.getItem("theme");
+    const savedTheme = localStorage.getItem('theme');
     if (savedTheme) {
       setTheme(savedTheme);
     } else {
       // Sistem tercihini kontrol et
       if (
-        window.matchMedia &&
-        window.matchMedia("(prefers-color-scheme: dark)").matches
+        window.matchMedia
+        && window.matchMedia('(prefers-color-scheme: dark)').matches
       ) {
-        setTheme("dark");
+        setTheme('dark');
       } else {
-        setTheme("light");
+        setTheme('light');
       }
     }
   }, [setTheme]);
@@ -280,14 +288,14 @@ function App() {
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       // Alt tuşuna basıldığında
-      if (e.key === "Alt" || e.key === "AltLeft" || e.key === "AltRight") {
+      if (e.key === 'Alt' || e.key === 'AltLeft' || e.key === 'AltRight') {
         e.preventDefault(); // Varsayılan davranışı engelle
         isAltKeyPressed.current = true;
         altKeyPressTime.current = Date.now();
       }
 
       // Alt + Q kombinasyonu
-      if (isAltKeyPressed.current && e.key === "q") {
+      if (isAltKeyPressed.current && e.key === 'q') {
         e.preventDefault(); // Varsayılan davranışı engelle
 
         // Alt+Q menüsü açık değilse aç
@@ -304,19 +312,19 @@ function App() {
       }
 
       // Alt + Sol Ok kombinasyonu - Pencereyi sol yarıya konumlandır
-      if (isAltKeyPressed.current && e.key === "ArrowLeft" && activeWindowId) {
+      if (isAltKeyPressed.current && e.key === 'ArrowLeft' && activeWindowId) {
         e.preventDefault();
         snapWindowToLeft(activeWindowId);
       }
 
       // Alt + Sağ Ok kombinasyonu - Pencereyi sağ yarıya konumlandır
-      if (isAltKeyPressed.current && e.key === "ArrowRight" && activeWindowId) {
+      if (isAltKeyPressed.current && e.key === 'ArrowRight' && activeWindowId) {
         e.preventDefault();
         snapWindowToRight(activeWindowId);
       }
 
       // Alt+Q menüsü açıkken Enter tuşu
-      if (altQSwitcherOpen.current && e.key === "Enter") {
+      if (altQSwitcherOpen.current && e.key === 'Enter') {
         e.preventDefault();
         confirmAltQSelection();
       }
@@ -324,7 +332,7 @@ function App() {
 
     const handleKeyUp = (e: KeyboardEvent) => {
       // Alt tuşu bırakıldığında
-      if (e.key === "Alt" || e.key === "AltLeft" || e.key === "AltRight") {
+      if (e.key === 'Alt' || e.key === 'AltLeft' || e.key === 'AltRight') {
         // Alt tuşunun ne kadar süre basılı kaldığını hesapla
         const pressDuration = altKeyPressTime.current
           ? Date.now() - altKeyPressTime.current
@@ -364,16 +372,16 @@ function App() {
       }
     };
 
-    window.addEventListener("keydown", handleKeyDown);
-    window.addEventListener("keyup", handleKeyUp);
-    document.addEventListener("visibilitychange", handleVisibilityChange);
-    window.addEventListener("blur", handleBlur);
+    window.addEventListener('keydown', handleKeyDown);
+    window.addEventListener('keyup', handleKeyUp);
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    window.addEventListener('blur', handleBlur);
 
     return () => {
-      window.removeEventListener("keydown", handleKeyDown);
-      window.removeEventListener("keyup", handleKeyUp);
-      document.removeEventListener("visibilitychange", handleVisibilityChange);
-      window.removeEventListener("blur", handleBlur);
+      window.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener('keyup', handleKeyUp);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('blur', handleBlur);
     };
   }, [
     openAltQSwitcher,
@@ -388,23 +396,23 @@ function App() {
   ]);
 
   const renderWindowContent = (window: any) => {
-    console.log("Pencere içeriği render ediliyor:", window.type, window.id);
+    console.log('Pencere içeriği render ediliyor:', window.type, window.id);
 
     // Diğer tip pencereleri normal şekilde render et
     switch (window.type) {
-      case "terminal":
+      case 'terminal':
         return <Terminal />;
-      case "file-manager":
+      case 'file-manager':
         return <FileManager mode={window.mode} data={window.data} />;
-      case "nano":
+      case 'nano':
         return <Nano fileId={window.fileId} />;
-      case "text-editor":
+      case 'text-editor':
         return <TextEditor initialFileId={window.fileId} />;
-      case "settings":
+      case 'settings':
         return <SettingsPanel />;
-      case "animation-preview":
+      case 'animation-preview':
         return <AnimationPreview data={window.data} />;
-      case "product-manager":
+      case 'product-manager':
         return <ProductManager productId={window.productId} />;
       default:
         return null;
@@ -413,7 +421,7 @@ function App() {
 
   const renderHeaderLeft = (window: any) => {
     switch (window.type) {
-      case "text-editor":
+      case 'text-editor':
         return <TextEditorHeaderTools />;
       default:
         return null;
@@ -423,7 +431,7 @@ function App() {
   return (
     <div
       className={`h-screen flex flex-col ${
-        currentTheme.name === "dark" ? "dark" : ""
+        currentTheme.name === 'dark' ? 'dark' : ''
       }`}
     >
       <div className="bg-background text-foreground relative flex-1 overflow-hidden">
@@ -434,7 +442,7 @@ function App() {
 
         {/* Pencereler */}
         <AnimatePresence>
-          {windows.map((window) => (
+          {windows.map(window => (
             <Window
               key={window.id}
               id={window.id}

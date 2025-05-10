@@ -1,28 +1,30 @@
-import { useEffect, useRef, useState } from "react";
+'use client';
 
-import { Button } from "../ui/button";
-import { useFileManagerStore } from "../../store/fileManagerStore";
-import { useWindowManagerStore } from "../../store/windowManagerStore";
+import { Button } from '@/components/ui/button';
 
-interface NanoProps {
+import { useFileManagerStore } from '@/store/fileManagerStore';
+import { useWindowManagerStore } from '@/store/windowManagerStore';
+import { useEffect, useRef, useState } from 'react';
+
+type NanoProps = {
   fileId: string;
-}
+};
 
 export const Nano = ({ fileId }: NanoProps) => {
   const { files, updateFile } = useFileManagerStore();
   const { removeWindow } = useWindowManagerStore();
-  const [content, setContent] = useState("");
-  const [fileName, setFileName] = useState("");
+  const [content, setContent] = useState('');
+  const [fileName, setFileName] = useState('');
   const [isSaved, setIsSaved] = useState(true);
-  const [statusMessage, setStatusMessage] = useState("");
+  const [statusMessage, setStatusMessage] = useState('');
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const windowId = useRef<string | null>(null);
 
   useEffect(() => {
-    const file = files.find((f) => f.id === fileId);
+    const file = files.find(f => f.id === fileId);
     if (file) {
-      setContent(file.content || "");
-      setFileName(file.name || "");
+      setContent(file.content || '');
+      setFileName(file.name || '');
       setIsSaved(true);
     }
 
@@ -37,10 +39,10 @@ export const Nano = ({ fileId }: NanoProps) => {
   const handleSave = () => {
     updateFile(fileId, { content });
     setIsSaved(true);
-    setStatusMessage("Dosya kaydedildi");
+    setStatusMessage('Dosya kaydedildi');
 
     setTimeout(() => {
-      setStatusMessage("");
+      setStatusMessage('');
     }, 2000);
   };
 
@@ -50,7 +52,7 @@ export const Nano = ({ fileId }: NanoProps) => {
     } else {
       if (
         window.confirm(
-          "Kaydedilmemiş değişiklikler var. Çıkmak istediğinizden emin misiniz?"
+          'Kaydedilmemiş değişiklikler var. Çıkmak istediğinizden emin misiniz?',
         )
       ) {
         closeWindow();
@@ -71,41 +73,41 @@ export const Nano = ({ fileId }: NanoProps) => {
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     // Ctrl+S ile kaydet
-    if (e.ctrlKey && e.key === "s") {
+    if (e.ctrlKey && e.key === 's') {
       e.preventDefault();
       handleSave();
     }
 
     // Ctrl+G ile çık
-    if (e.ctrlKey && e.key === "g") {
+    if (e.ctrlKey && e.key === 'g') {
       e.preventDefault();
       handleExit();
     }
 
     // Ctrl+X ile iptal
-    if (e.ctrlKey && e.key === "x") {
+    if (e.ctrlKey && e.key === 'x') {
       e.preventDefault();
-      setStatusMessage("İşlem iptal edildi");
+      setStatusMessage('İşlem iptal edildi');
       setTimeout(() => {
-        setStatusMessage("");
+        setStatusMessage('');
       }, 2000);
     }
 
     // Tab tuşu için düzgün girinti
-    if (e.key === "Tab") {
+    if (e.key === 'Tab') {
       e.preventDefault();
       const start = e.currentTarget.selectionStart;
       const end = e.currentTarget.selectionEnd;
 
-      const newContent =
-        content.substring(0, start) + "  " + content.substring(end);
+      const newContent
+        = `${content.substring(0, start)}  ${content.substring(end)}`;
       setContent(newContent);
 
       // İmleci doğru konuma getir
       setTimeout(() => {
         if (textareaRef.current) {
-          textareaRef.current.selectionStart =
-            textareaRef.current.selectionEnd = start + 2;
+          textareaRef.current.selectionStart
+            = textareaRef.current.selectionEnd = start + 2;
         }
       }, 0);
 
@@ -153,15 +155,21 @@ export const Nano = ({ fileId }: NanoProps) => {
             variant="ghost"
             className="hover:bg-muted px-2"
             onClick={() => {
-              setStatusMessage("İşlem iptal edildi");
-              setTimeout(() => setStatusMessage(""), 2000);
+              setStatusMessage('İşlem iptal edildi');
+              setTimeout(() => setStatusMessage(''), 2000);
             }}
           >
             ^X İptal
           </Button>
         </div>
         <div className="text-sm text-muted-foreground">
-          Satır: {content.split("\n").length} | Karakter: {content.length}
+          Satır:
+          {' '}
+          {content.split('\n').length}
+          {' '}
+          | Karakter:
+          {' '}
+          {content.length}
         </div>
       </div>
     </div>

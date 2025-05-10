@@ -3,4 +3,4 @@ description:
 globs: 
 alwaysApply: false
 ---
-Use pnpm for node package managamenet tool.
+Use bun for node package managamenet tool.

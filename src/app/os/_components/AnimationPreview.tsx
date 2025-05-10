@@ -1,22 +1,21 @@
-import { useEffect } from "react";
-import { useSettingsStore } from "../store/settingsStore";
-import { useWindowManagerStore } from "../store/windowManagerStore";
+import { useSettingsStore } from '@/store/settingsStore';
+import { useEffect } from 'react';
 
 export const AnimationPreview = ({ data }: { data?: any }) => {
   const { tweaks } = useSettingsStore();
 
   useEffect(() => {
-    console.log("AnimationPreview render edildi");
-    console.log("Data:", data);
+    console.log('AnimationPreview render edildi');
+    console.log('Data:', data);
   }, [data]);
 
   // Eğer data.content varsa (SettingsPanel'den gelen) o içeriği göster
   if (data?.content) {
-    console.log("Özel içerik render ediliyor:", data.content);
+    console.log('Özel içerik render ediliyor:', data.content);
     return data.content;
   }
 
-  console.log("Varsayılan içerik render ediliyor");
+  console.log('Varsayılan içerik render ediliyor');
   // Varsayılan görünüm (eski stil)
   return (
     <div className="h-full w-full flex flex-col items-center justify-center p-6 text-center">
@@ -24,7 +23,8 @@ export const AnimationPreview = ({ data }: { data?: any }) => {
 
       <div className="bg-card rounded-lg p-6 shadow-inner w-full">
         <p className="text-lg mb-2">
-          Seçilen Animasyon:{" "}
+          Seçilen Animasyon:
+          {' '}
           <span className="font-semibold">{tweaks.windowAnimation}</span>
         </p>
         <p className="text-muted-foreground mb-6">

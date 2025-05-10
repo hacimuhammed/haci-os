@@ -1,26 +1,26 @@
-import { create } from "zustand";
+import { create } from 'zustand';
 
 // Context Menu türleri
-export interface ContextMenuItem {
+export type ContextMenuItem = {
   id: string;
   label: string;
   icon?: React.ReactNode;
   action: () => void;
   disabled?: boolean;
   separator?: boolean;
-  variant?: "default" | "destructive";
-}
+  variant?: 'default' | 'destructive';
+};
 
-export interface ContextMenuInfo {
+export type ContextMenuInfo = {
   visible: boolean;
   x: number;
   y: number;
   items: ContextMenuItem[];
   sourceWindowId: string | null;
   zIndex: number;
-}
+};
 
-interface Window {
+type Window = {
   id: string;
   title: string;
   type: string;
@@ -31,13 +31,13 @@ interface Window {
   isMaximized: boolean;
   zIndex: number;
   fileId?: string;
-  mode?: "open" | "save"; // Dosya açma/kaydetme modu
+  mode?: 'open' | 'save'; // Dosya açma/kaydetme modu
   data?: any; // Pencere ile ilgili ek veri
-  snapPosition?: "left" | "right" | "none"; // Pencere konumlandırma
+  snapPosition?: 'left' | 'right' | 'none'; // Pencere konumlandırma
   productId?: string; // Ürün uygulaması için ürün kimliği
-}
+};
 
-interface WindowManagerState {
+type WindowManagerState = {
   windows: Window[];
   activeWindowId: string | null;
   previousWindowId: string | null;
@@ -71,7 +71,7 @@ interface WindowManagerState {
   ) => void;
   hideContextMenu: () => void;
   recalculateZIndices: () => void;
-}
+};
 
 export const useWindowManagerStore = create<WindowManagerState>((set, get) => ({
   windows: [],
@@ -91,11 +91,11 @@ export const useWindowManagerStore = create<WindowManagerState>((set, get) => ({
     sourceWindowId: null,
     zIndex: 9999,
   },
-  addWindow: (window) =>
+  addWindow: window =>
     set((state) => {
-      console.log("addWindow çağrıldı:", window);
+      console.log('addWindow çağrıldı:', window);
       // En yüksek zIndex değerini bul
-      const maxZIndex = Math.max(...state.windows.map((w) => w.zIndex), 0);
+      const maxZIndex = Math.max(...state.windows.map(w => w.zIndex), 0);
 
       // Aktif pencere olarak işaretle
       const windowWithActiveFlag = {
@@ -104,13 +104,13 @@ export const useWindowManagerStore = create<WindowManagerState>((set, get) => ({
         originalSize: window.size, // İlk boyutu kaydet
       };
 
-      console.log("Eklenen pencere:", windowWithActiveFlag);
+      console.log('Eklenen pencere:', windowWithActiveFlag);
 
       // Pencere geçmişini güncelle
       const newHistory = state.activeWindowId
         ? [
             state.activeWindowId,
-            ...state.windowHistory.filter((id) => id !== state.activeWindowId),
+            ...state.windowHistory.filter(id => id !== state.activeWindowId),
           ]
         : state.windowHistory;
 
@@ -121,21 +121,21 @@ export const useWindowManagerStore = create<WindowManagerState>((set, get) => ({
         windowHistory: newHistory,
       };
     }),
-  removeWindow: (id) =>
+  removeWindow: id =>
     set((state) => {
-      const newWindows = state.windows.filter((w) => w.id !== id);
+      const newWindows = state.windows.filter(w => w.id !== id);
       // Aktif pencere kapatıldıysa, en üstteki pencereyi aktif yap
       let newActiveWindowId = state.activeWindowId;
       if (state.activeWindowId === id) {
-        const highestZIndex = Math.max(...newWindows.map((w) => w.zIndex), 0);
+        const highestZIndex = Math.max(...newWindows.map(w => w.zIndex), 0);
         const newActiveWindow = newWindows.find(
-          (w) => w.zIndex === highestZIndex
+          w => w.zIndex === highestZIndex,
         );
         newActiveWindowId = newActiveWindow ? newActiveWindow.id : null;
       }
 
       // Geçmişten kaldırılan pencereyi çıkar
-      const newHistory = state.windowHistory.filter((wId) => wId !== id);
+      const newHistory = state.windowHistory.filter(wId => wId !== id);
 
       // Önceki pencereyi güncelle
       let newPreviousWindowId = state.previousWindowId;
@@ -154,12 +154,12 @@ export const useWindowManagerStore = create<WindowManagerState>((set, get) => ({
     set((state) => {
       // Eğer boyut güncelleniyorsa ve pencere snap pozisyonunda değilse
       // (solda veya sağda değilse) orijinal boyutu güncelle
-      let updatedWindows = state.windows.map((window) => {
+      const updatedWindows = state.windows.map((window) => {
         if (window.id === id) {
-          const shouldUpdateOriginalSize =
-            updates.size &&
-            !window.snapPosition &&
-            (!updates.snapPosition || updates.snapPosition === "none");
+          const shouldUpdateOriginalSize
+            = updates.size
+              && !window.snapPosition
+              && (!updates.snapPosition || updates.snapPosition === 'none');
 
           return {
             ...window,
@@ -176,26 +176,26 @@ export const useWindowManagerStore = create<WindowManagerState>((set, get) => ({
         windows: updatedWindows,
       };
     }),
-  setActiveWindow: (id) =>
+  setActiveWindow: id =>
     set((state) => {
       // En yüksek zIndex değerini bul
-      const maxZIndex = Math.max(...state.windows.map((w) => w.zIndex), 0);
+      const maxZIndex = Math.max(...state.windows.map(w => w.zIndex), 0);
 
       // Tüm pencereleri zIndex'e göre sırala (büyükten küçüğe)
       const sortedWindows = [...state.windows].sort(
-        (a, b) => b.zIndex - a.zIndex
+        (a, b) => b.zIndex - a.zIndex,
       );
 
       // Pencere geçmişini güncelle
-      const newHistory =
-        state.activeWindowId && state.activeWindowId !== id
+      const newHistory
+        = state.activeWindowId && state.activeWindowId !== id
           ? [
               state.activeWindowId,
               ...state.windowHistory.filter(
-                (wId) => wId !== state.activeWindowId && wId !== id
+                wId => wId !== state.activeWindowId && wId !== id,
               ),
             ]
-          : state.windowHistory.filter((wId) => wId !== id);
+          : state.windowHistory.filter(wId => wId !== id);
 
       // Aktif olacak pencerenin zIndex'ini en yüksek değere atayıp
       // diğer pencerelerin zIndex değerlerini sırayla azalt
@@ -219,18 +219,18 @@ export const useWindowManagerStore = create<WindowManagerState>((set, get) => ({
         windows: updatedWindows,
       };
     }),
-  bringToFront: (id) =>
+  bringToFront: id =>
     set((state) => {
       // En yüksek zIndex değerini bul
-      const maxZIndex = Math.max(...state.windows.map((w) => w.zIndex), 0);
+      const maxZIndex = Math.max(...state.windows.map(w => w.zIndex), 0);
 
       // Tüm pencereleri zIndex'e göre sırala (büyükten küçüğe)
       const sortedWindows = [...state.windows].sort(
-        (a, b) => b.zIndex - a.zIndex
+        (a, b) => b.zIndex - a.zIndex,
       );
 
       // Seçilen pencere şu anda en üstteyse hiçbir şey yapma
-      const targetWindow = state.windows.find((w) => w.id === id);
+      const targetWindow = state.windows.find(w => w.id === id);
       if (targetWindow && targetWindow.zIndex === maxZIndex) {
         // Zaten en üstteyse sadece active window olarak belirle
         return {
@@ -244,15 +244,15 @@ export const useWindowManagerStore = create<WindowManagerState>((set, get) => ({
       }
 
       // Pencere geçmişini güncelle
-      const newHistory =
-        state.activeWindowId && state.activeWindowId !== id
+      const newHistory
+        = state.activeWindowId && state.activeWindowId !== id
           ? [
               state.activeWindowId,
               ...state.windowHistory.filter(
-                (wId) => wId !== state.activeWindowId && wId !== id
+                wId => wId !== state.activeWindowId && wId !== id,
               ),
             ]
-          : state.windowHistory.filter((wId) => wId !== id);
+          : state.windowHistory.filter(wId => wId !== id);
 
       // Aktif olacak pencerenin zIndex'ini en yüksek değere atayıp
       // diğer pencerelerin zIndex değerlerini sırayla azalt
@@ -281,9 +281,9 @@ export const useWindowManagerStore = create<WindowManagerState>((set, get) => ({
       // Alt+Q menüsünü aç
       // Mevcut pencerelerin ID'leri ile başlayarak, windowHistory'den hiç görüntülenmeyen pencereleri ekle
       const visibleWindowIds = state.windows
-        .filter((w) => !w.isMinimized)
+        .filter(w => !w.isMinimized)
         .sort((a, b) => b.zIndex - a.zIndex) // z-index'e göre sırala
-        .map((w) => w.id);
+        .map(w => w.id);
 
       return {
         isAltQOpen: true,
@@ -297,8 +297,10 @@ export const useWindowManagerStore = create<WindowManagerState>((set, get) => ({
     }),
   selectNextWindow: () =>
     set((state) => {
-      const visibleWindows = state.windows.filter((w) => !w.isMinimized);
-      if (visibleWindows.length <= 1) return state;
+      const visibleWindows = state.windows.filter(w => !w.isMinimized);
+      if (visibleWindows.length <= 1) {
+        return state;
+      }
 
       const newIndex = (state.selectedWindowIndex + 1) % visibleWindows.length;
       return {
@@ -307,45 +309,51 @@ export const useWindowManagerStore = create<WindowManagerState>((set, get) => ({
     }),
   selectPreviousWindow: () =>
     set((state) => {
-      const visibleWindows = state.windows.filter((w) => !w.isMinimized);
-      if (visibleWindows.length <= 1) return state;
+      const visibleWindows = state.windows.filter(w => !w.isMinimized);
+      if (visibleWindows.length <= 1) {
+        return state;
+      }
 
-      const newIndex =
-        (state.selectedWindowIndex - 1 + visibleWindows.length) %
-        visibleWindows.length;
+      const newIndex
+        = (state.selectedWindowIndex - 1 + visibleWindows.length)
+          % visibleWindows.length;
       return {
         selectedWindowIndex: newIndex,
       };
     }),
   confirmAltQSelection: () =>
     set((state) => {
-      if (!state.isAltQOpen) return state;
+      if (!state.isAltQOpen) {
+        return state;
+      }
 
       const visibleWindows = state.windows
-        .filter((w) => !w.isMinimized)
+        .filter(w => !w.isMinimized)
         .sort((a, b) => b.zIndex - a.zIndex);
 
-      if (visibleWindows.length === 0) return state;
+      if (visibleWindows.length === 0) {
+        return state;
+      }
 
       // Seçilen pencere indeksi sınırlar içinde mi kontrol et
       const safeIndex = Math.min(
         state.selectedWindowIndex,
-        visibleWindows.length - 1
+        visibleWindows.length - 1,
       );
       const selectedWindow = visibleWindows[safeIndex];
 
       // Pencere geçmişini güncelle
-      const newHistory =
-        state.activeWindowId && state.activeWindowId !== selectedWindow.id
+      const newHistory
+        = state.activeWindowId && state.activeWindowId !== selectedWindow.id
           ? [
               state.activeWindowId,
               ...state.windowHistory.filter(
-                (id) => id !== state.activeWindowId && id !== selectedWindow.id
+                id => id !== state.activeWindowId && id !== selectedWindow.id,
               ),
             ]
-          : state.windowHistory.filter((id) => id !== selectedWindow.id);
+          : state.windowHistory.filter(id => id !== selectedWindow.id);
 
-      const maxZIndex = Math.max(...state.windows.map((w) => w.zIndex), 0);
+      const maxZIndex = Math.max(...state.windows.map(w => w.zIndex), 0);
 
       // Aktif olacak pencerenin zIndex'ini en yüksek değere atayıp
       // diğer pencerelerin zIndex değerlerini koru
@@ -370,26 +378,30 @@ export const useWindowManagerStore = create<WindowManagerState>((set, get) => ({
     }),
   quickSwitchToLastWindow: () =>
     set((state) => {
-      if (!state.previousWindowId) return state;
+      if (!state.previousWindowId) {
+        return state;
+      }
 
       // Önceki pencere hala var mı kontrol et
       const prevWindow = state.windows.find(
-        (w) => w.id === state.previousWindowId
+        w => w.id === state.previousWindowId,
       );
-      if (!prevWindow) return state;
+      if (!prevWindow) {
+        return state;
+      }
 
-      const maxZIndex = Math.max(...state.windows.map((w) => w.zIndex), 0);
+      const maxZIndex = Math.max(...state.windows.map(w => w.zIndex), 0);
 
       // Pencere geçmişini güncelle
       const newHistory = state.activeWindowId
         ? [
             state.activeWindowId,
             ...state.windowHistory.filter(
-              (id) =>
-                id !== state.activeWindowId && id !== state.previousWindowId
+              id =>
+                id !== state.activeWindowId && id !== state.previousWindowId,
             ),
           ]
-        : state.windowHistory.filter((id) => id !== state.previousWindowId);
+        : state.windowHistory.filter(id => id !== state.previousWindowId);
 
       // Aktif olacak pencerenin zIndex'ini en yüksek değere atayıp
       // diğer pencerelerin zIndex değerlerini koru
@@ -411,10 +423,12 @@ export const useWindowManagerStore = create<WindowManagerState>((set, get) => ({
       };
     }),
   // Pencereyi sol yarıya konumlandır
-  snapWindowToLeft: (id) =>
+  snapWindowToLeft: id =>
     set((state) => {
-      const windowObj = state.windows.find((w) => w.id === id);
-      if (!windowObj) return state;
+      const windowObj = state.windows.find(w => w.id === id);
+      if (!windowObj) {
+        return state;
+      }
 
       // Ekranın sol yarısını kaplayan pencere boyutu
       const screenWidth = globalThis.window.innerWidth || 1920; // Varsayılan değer
@@ -427,28 +441,30 @@ export const useWindowManagerStore = create<WindowManagerState>((set, get) => ({
         ...windowObj,
         position: { x: 0, y: 0 },
         size: { width, height: screenHeight },
-        snapPosition: "left" as const,
+        snapPosition: 'left' as const,
         // Eğer pencere önceden bölünmüş değilse ve orijinal boyut yoksa
         // mevcut boyutu orijinal olarak kaydet
         originalSize: windowObj.originalSize || windowObj.size,
       };
 
       // Sağda bir pencere var mı kontrol et
-      const rightWindow = state.windows.find((w) => w.snapPosition === "right");
+      const rightWindow = state.windows.find(w => w.snapPosition === 'right');
 
       // Bölücüyü göster
       const shouldShowSplitter = rightWindow !== undefined;
 
       return {
-        windows: state.windows.map((w) => (w.id === id ? updatedWindow : w)),
+        windows: state.windows.map(w => (w.id === id ? updatedWindow : w)),
         isSplitterVisible: shouldShowSplitter,
       };
     }),
   // Pencereyi sağ yarıya konumlandır
-  snapWindowToRight: (id) =>
+  snapWindowToRight: id =>
     set((state) => {
-      const windowObj = state.windows.find((w) => w.id === id);
-      if (!windowObj) return state;
+      const windowObj = state.windows.find(w => w.id === id);
+      if (!windowObj) {
+        return state;
+      }
 
       // Ekranın sağ yarısını kaplayan pencere boyutu
       const screenWidth = globalThis.window.innerWidth || 1920; // Varsayılan değer
@@ -462,25 +478,25 @@ export const useWindowManagerStore = create<WindowManagerState>((set, get) => ({
         ...windowObj,
         position: { x: xPosition, y: 0 },
         size: { width, height: screenHeight },
-        snapPosition: "right" as const,
+        snapPosition: 'right' as const,
         // Eğer pencere önceden bölünmüş değilse ve orijinal boyut yoksa
         // mevcut boyutu orijinal olarak kaydet
         originalSize: windowObj.originalSize || windowObj.size,
       };
 
       // Solda bir pencere var mı kontrol et
-      const leftWindow = state.windows.find((w) => w.snapPosition === "left");
+      const leftWindow = state.windows.find(w => w.snapPosition === 'left');
 
       // Bölücüyü göster
       const shouldShowSplitter = leftWindow !== undefined;
 
       return {
-        windows: state.windows.map((w) => (w.id === id ? updatedWindow : w)),
+        windows: state.windows.map(w => (w.id === id ? updatedWindow : w)),
         isSplitterVisible: shouldShowSplitter,
       };
     }),
   // Bölücü pozisyonunu güncelle
-  updateSplitterPosition: (position) =>
+  updateSplitterPosition: position =>
     set((state) => {
       const screenWidth = globalThis.window.innerWidth || 1920;
       const screenHeight = globalThis.window.innerHeight || 1080;
@@ -489,18 +505,18 @@ export const useWindowManagerStore = create<WindowManagerState>((set, get) => ({
       const clampedPosition = Math.max(20, Math.min(80, position));
 
       // Sol ve sağ pencereleri bul
-      const leftWindow = state.windows.find((w) => w.snapPosition === "left");
-      const rightWindow = state.windows.find((w) => w.snapPosition === "right");
+      const leftWindow = state.windows.find(w => w.snapPosition === 'left');
+      const rightWindow = state.windows.find(w => w.snapPosition === 'right');
 
       // Pencereleri güncelle
       const updatedWindows = state.windows.map((w) => {
-        if (w.snapPosition === "left") {
+        if (w.snapPosition === 'left') {
           const width = (screenWidth * clampedPosition) / 100;
           return {
             ...w,
             size: { ...w.size, width },
           };
-        } else if (w.snapPosition === "right") {
+        } else if (w.snapPosition === 'right') {
           const width = (screenWidth * (100 - clampedPosition)) / 100;
           const xPosition = (screenWidth * clampedPosition) / 100;
           return {
@@ -518,20 +534,24 @@ export const useWindowManagerStore = create<WindowManagerState>((set, get) => ({
       };
     }),
   // Bölücü görünürlüğünü ayarla
-  setSplitterVisibility: (isVisible) => set({ isSplitterVisible: isVisible }),
+  setSplitterVisibility: isVisible => set({ isSplitterVisible: isVisible }),
   // Sürükleme başladığında bölünme durumunu sonlandır
-  endSplitOnDrag: (draggedWindowId) =>
+  endSplitOnDrag: draggedWindowId =>
     set((state) => {
       // Sürüklenen pencere
-      const draggedWindow = state.windows.find((w) => w.id === draggedWindowId);
-      if (!draggedWindow) return state;
+      const draggedWindow = state.windows.find(w => w.id === draggedWindowId);
+      if (!draggedWindow) {
+        return state;
+      }
 
       // Split durumundaki tüm pencereleri bul
-      const leftWindow = state.windows.find((w) => w.snapPosition === "left");
-      const rightWindow = state.windows.find((w) => w.snapPosition === "right");
+      const leftWindow = state.windows.find(w => w.snapPosition === 'left');
+      const rightWindow = state.windows.find(w => w.snapPosition === 'right');
 
       // Eğer hiç split pencere yoksa işlem yapma
-      if (!leftWindow && !rightWindow) return state;
+      if (!leftWindow && !rightWindow) {
+        return state;
+      }
 
       // Sürüklenen pencere bir snap pozisyonunda mı?
       const isDraggedWindowSnapped = !!draggedWindow.snapPosition;
@@ -548,8 +568,8 @@ export const useWindowManagerStore = create<WindowManagerState>((set, get) => ({
         }
         // Diğer snap pozisyonundaki pencere (karşılaştırma penceresi)
         else if (
-          (w.id === leftWindow?.id || w.id === rightWindow?.id) &&
-          w.id !== draggedWindowId
+          (w.id === leftWindow?.id || w.id === rightWindow?.id)
+          && w.id !== draggedWindowId
         ) {
           return {
             ...w,
@@ -575,14 +595,14 @@ export const useWindowManagerStore = create<WindowManagerState>((set, get) => ({
       let contextZIndex = 9999; // Varsayılan yüksek bir zIndex
 
       if (sourceWindowId) {
-        const sourceWindow = state.windows.find((w) => w.id === sourceWindowId);
+        const sourceWindow = state.windows.find(w => w.id === sourceWindowId);
         if (sourceWindow) {
           // Kaynak pencerenin üzerinde göster
           contextZIndex = sourceWindow.zIndex + 1;
         }
       } else {
         // Eğer kaynak pencere yoksa en yüksek zIndex'in üzerinde göster
-        const maxZIndex = Math.max(...state.windows.map((w) => w.zIndex), 0);
+        const maxZIndex = Math.max(...state.windows.map(w => w.zIndex), 0);
         contextZIndex = maxZIndex + 1;
       }
 
@@ -614,7 +634,7 @@ export const useWindowManagerStore = create<WindowManagerState>((set, get) => ({
     set((state) => {
       // Tüm pencereleri zIndex'e göre sırala (büyükten küçüğe)
       const sortedWindows = [...state.windows].sort(
-        (a, b) => b.zIndex - a.zIndex
+        (a, b) => b.zIndex - a.zIndex,
       );
 
       // Yeni zIndex'leri atanmış pencereler
@@ -629,7 +649,7 @@ export const useWindowManagerStore = create<WindowManagerState>((set, get) => ({
 
       if (state.contextMenu.visible && state.contextMenu.sourceWindowId) {
         const sourceWindow = updatedWindows.find(
-          (w) => w.id === state.contextMenu.sourceWindowId
+          w => w.id === state.contextMenu.sourceWindowId,
         );
 
         if (sourceWindow) {

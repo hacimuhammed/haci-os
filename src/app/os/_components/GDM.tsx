@@ -1,14 +1,12 @@
-import { AnimatePresence, motion } from "framer-motion";
-import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
-import { LogIn, Trash2, UserPlus, X } from "lucide-react";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
-import { useEffect, useState } from "react";
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { useFileManagerStore } from '@/store/fileManagerStore';
 
-import { Button } from "./ui/button";
-import { Input } from "./ui/input";
-import { useFileManagerStore } from "../store/fileManagerStore";
-import { useUserStore } from "../store/userStore";
-import { v4 as uuidv4 } from "uuid";
+import { useUserStore } from '@/store/userStore';
+import { AnimatePresence, motion } from 'framer-motion';
+import { LogIn, Trash2, UserPlus, X } from 'lucide-react';
+import { useEffect, useState } from 'react';
 
 enum GDMMode {
   LOGIN,
@@ -18,10 +16,10 @@ enum GDMMode {
 
 export const GDM = () => {
   const [mode, setMode] = useState<GDMMode>(GDMMode.LOGIN);
-  const [username, setUsername] = useState("");
-  const [password, setPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
-  const [error, setError] = useState("");
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [error, setError] = useState('');
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
@@ -41,29 +39,29 @@ export const GDM = () => {
 
   const handleLogin = () => {
     if (!username || !password) {
-      setError("Kullanıcı adı ve şifre gereklidir");
+      setError('Kullanıcı adı ve şifre gereklidir');
       return;
     }
 
     const success = login(username, password);
     if (!success) {
-      setError("Geçersiz kullanıcı adı veya şifre");
+      setError('Geçersiz kullanıcı adı veya şifre');
     }
   };
 
   const handleCreateUser = () => {
     if (!username) {
-      setError("Kullanıcı adı gereklidir");
+      setError('Kullanıcı adı gereklidir');
       return;
     }
 
     if (!password) {
-      setError("Şifre gereklidir");
+      setError('Şifre gereklidir');
       return;
     }
 
     if (password !== confirmPassword) {
-      setError("Şifreler eşleşmiyor");
+      setError('Şifreler eşleşmiyor');
       return;
     }
 
@@ -75,11 +73,11 @@ export const GDM = () => {
       initializeUserDirectory(newUser.username);
 
       // Formu temizle ve login moduna dön
-      setUsername("");
-      setPassword("");
-      setConfirmPassword("");
+      setUsername('');
+      setPassword('');
+      setConfirmPassword('');
       setMode(GDMMode.LOGIN);
-      setError("");
+      setError('');
     } catch (err: any) {
       setError(err.message);
     }
@@ -96,21 +94,21 @@ export const GDM = () => {
 
   // Seçilen kullanıcı bilgileri
   const selectedUser = selectedUserId
-    ? users.find((user) => user.id === selectedUserId)
+    ? users.find(user => user.id === selectedUserId)
     : null;
 
   const formatTime = () => {
     return currentTime.toLocaleTimeString(undefined, {
-      hour: "2-digit",
-      minute: "2-digit",
+      hour: '2-digit',
+      minute: '2-digit',
     });
   };
 
   const formatDate = () => {
     return currentTime.toLocaleDateString(undefined, {
-      weekday: "long",
-      month: "long",
-      day: "numeric",
+      weekday: 'long',
+      month: 'long',
+      day: 'numeric',
     });
   };
 
@@ -137,18 +135,18 @@ export const GDM = () => {
               </h2>
 
               <div className="grid grid-cols-3 gap-3 my-6">
-                {users.map((user) => (
+                {users.map(user => (
                   <div
                     key={user.id}
                     className={`flex flex-col items-center p-3 rounded-lg cursor-pointer transition-colors ${
                       selectedUserId === user.id
-                        ? "bg-primary/20"
-                        : "hover:bg-muted"
+                        ? 'bg-primary/20'
+                        : 'hover:bg-muted'
                     }`}
                     onClick={() => {
                       setSelectedUserId(user.id);
                       setUsername(user.username);
-                      setError("");
+                      setError('');
                     }}
                   >
                     <Avatar className="h-16 w-16 mb-2">
@@ -166,15 +164,15 @@ export const GDM = () => {
                 <Input
                   placeholder="Kullanıcı adı"
                   value={username}
-                  onChange={(e) => setUsername(e.target.value)}
+                  onChange={e => setUsername(e.target.value)}
                 />
                 <Input
                   placeholder="Şifre"
                   type="password"
                   value={password}
-                  onChange={(e) => setPassword(e.target.value)}
+                  onChange={e => setPassword(e.target.value)}
                   onKeyDown={(e) => {
-                    if (e.key === "Enter") {
+                    if (e.key === 'Enter') {
                       handleLogin();
                     }
                   }}
@@ -192,9 +190,9 @@ export const GDM = () => {
                   variant="outline"
                   onClick={() => {
                     setMode(GDMMode.CREATE_USER);
-                    setUsername("");
-                    setPassword("");
-                    setError("");
+                    setUsername('');
+                    setPassword('');
+                    setError('');
                   }}
                 >
                   <UserPlus className="mr-2 h-4 w-4" />
@@ -230,19 +228,19 @@ export const GDM = () => {
                 <Input
                   placeholder="Kullanıcı adı"
                   value={username}
-                  onChange={(e) => setUsername(e.target.value)}
+                  onChange={e => setUsername(e.target.value)}
                 />
                 <Input
                   placeholder="Şifre"
                   type="password"
                   value={password}
-                  onChange={(e) => setPassword(e.target.value)}
+                  onChange={e => setPassword(e.target.value)}
                 />
                 <Input
                   placeholder="Şifreyi onayla"
                   type="password"
                   value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  onChange={e => setConfirmPassword(e.target.value)}
                 />
 
                 {error && <p className="text-destructive text-sm">{error}</p>}
@@ -263,7 +261,9 @@ export const GDM = () => {
           <div className="bg-card p-6 rounded-lg shadow-lg w-full max-w-sm">
             <h3 className="text-xl font-bold mb-4">Kullanıcıyı Sil</h3>
             <p>
-              <strong>{selectedUser?.username}</strong> kullanıcısını silmek
+              <strong>{selectedUser?.username}</strong>
+              {' '}
+              kullanıcısını silmek
               istediğinizden emin misiniz? Bu işlem geri alınamaz.
             </p>
             <div className="flex space-x-2 mt-6">

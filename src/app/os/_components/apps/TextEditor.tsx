@@ -1,23 +1,23 @@
-import { useEffect, useRef, useState } from "react";
+import { Button } from '@/components/ui/button';
 
-import { Button } from "../ui/button";
-import { calculateCascadingPosition } from "../../utils/window";
-import { useFileManagerStore } from "../../store/fileManagerStore";
-import { useWindowManagerStore } from "../../store/windowManagerStore";
-import { v4 as uuidv4 } from "uuid";
+import { useFileManagerStore } from '@/store/fileManagerStore';
+import { useWindowManagerStore } from '@/store/windowManagerStore';
+import { calculateCascadingPosition } from '@/utils/window';
+import { useEffect, useRef, useState } from 'react';
+import { v4 as uuidv4 } from 'uuid';
 
 // Tab yapısı için interface
-interface Tab {
+type Tab = {
   id: string;
   title: string;
   content: string;
   fileId?: string;
   isModified: boolean;
-}
+};
 
-interface TextEditorProps {
+type TextEditorProps = {
   initialFileId?: string;
-}
+};
 
 // HeaderLeft için bileşen, Window'a aktarılacak
 export const TextEditorHeaderTools = () => {
@@ -31,9 +31,9 @@ export const TextEditorHeaderTools = () => {
     if (windowId) {
       // Mesaj gönder
       window.dispatchEvent(
-        new CustomEvent("new-tab-request", {
+        new CustomEvent('new-tab-request', {
           detail: { windowId },
-        })
+        }),
       );
     } else {
       // Yeni bir metin düzenleyici penceresi açıyoruz
@@ -42,8 +42,8 @@ export const TextEditorHeaderTools = () => {
 
       addWindow({
         id: uuidv4(),
-        title: "Text Editor",
-        type: "text-editor",
+        title: 'Text Editor',
+        type: 'text-editor',
         position,
         size,
         isMinimized: false,
@@ -65,14 +65,14 @@ export const TextEditorHeaderTools = () => {
 
     addWindow({
       id: windowId,
-      title: "Open File",
-      type: "file-manager",
+      title: 'Open File',
+      type: 'file-manager',
       position,
       size,
       isMinimized: false,
       isMaximized: false,
       zIndex: 100,
-      mode: "open",
+      mode: 'open',
       data: {
         onOpen: (fileId: string) => openFileInEditor(fileId),
       },
@@ -81,19 +81,19 @@ export const TextEditorHeaderTools = () => {
 
   const openFileInEditor = (fileId: string) => {
     const { files } = useFileManagerStore.getState();
-    const file = files.find((f) => f.id === fileId);
+    const file = files.find(f => f.id === fileId);
 
     if (file) {
       const editorSize = { width: 900, height: 700 };
       const editorPosition = calculateCascadingPosition(
         editorSize.width,
-        editorSize.height
+        editorSize.height,
       );
 
       addWindow({
         id: uuidv4(),
         title: file.name,
-        type: "text-editor",
+        type: 'text-editor',
         position: editorPosition,
         size: editorSize,
         isMinimized: false,
@@ -192,10 +192,10 @@ export const TextEditor = ({ initialFileId }: TextEditorProps) => {
       }
     };
 
-    window.addEventListener("new-tab-request", handleNewTabRequest);
+    window.addEventListener('new-tab-request', handleNewTabRequest);
 
     return () => {
-      window.removeEventListener("new-tab-request", handleNewTabRequest);
+      window.removeEventListener('new-tab-request', handleNewTabRequest);
     };
   }, []);
 
@@ -203,12 +203,12 @@ export const TextEditor = ({ initialFileId }: TextEditorProps) => {
   const createNewTab = () => {
     const newTab: Tab = {
       id: uuidv4(),
-      title: "New File",
-      content: "",
+      title: 'New File',
+      content: '',
       isModified: false,
     };
 
-    setTabs((prevTabs) => [...prevTabs, newTab]);
+    setTabs(prevTabs => [...prevTabs, newTab]);
     setActiveTabId(newTab.id);
 
     // Tab oluşturulduktan sonra editöre odaklan
@@ -221,42 +221,48 @@ export const TextEditor = ({ initialFileId }: TextEditorProps) => {
 
   // Dosyayı yeni bir tab'de aç
   const loadFileToNewTab = (fileId: string) => {
-    const file = files.find((f) => f.id === fileId);
-    if (!file) return;
+    const file = files.find(f => f.id === fileId);
+    if (!file) {
+      return;
+    }
 
     const newTab: Tab = {
       id: uuidv4(),
       title: file.name,
-      content: file.content || "",
+      content: file.content || '',
       fileId: file.id,
       isModified: false,
     };
 
-    setTabs((prevTabs) => [...prevTabs, newTab]);
+    setTabs(prevTabs => [...prevTabs, newTab]);
     setActiveTabId(newTab.id);
   };
 
   // Aktif tab içeriğini güncelle
   const updateTabContent = (content: string) => {
-    if (!activeTabId) return;
+    if (!activeTabId) {
+      return;
+    }
 
-    setTabs((prevTabs) =>
-      prevTabs.map((tab) =>
+    setTabs(prevTabs =>
+      prevTabs.map(tab =>
         tab.id === activeTabId
           ? {
               ...tab,
               content,
               isModified: tab.fileId ? true : tab.content !== content,
             }
-          : tab
-      )
+          : tab,
+      ),
     );
   };
 
   // Tab kapat
   const closeTab = (tabId: string) => {
-    const tabToClose = tabs.find((t) => t.id === tabId);
-    if (!tabToClose) return;
+    const tabToClose = tabs.find(t => t.id === tabId);
+    if (!tabToClose) {
+      return;
+    }
 
     // Değişiklik varsa, kaydetme soralım
     if (tabToClose.isModified) {
@@ -273,12 +279,12 @@ export const TextEditor = ({ initialFileId }: TextEditorProps) => {
   const performCloseTab = (tabId: string) => {
     // Eğer aktif tab kapatılıyorsa, yeni bir aktif tab seç
     if (activeTabId === tabId) {
-      const currentIndex = tabs.findIndex((t) => t.id === tabId);
+      const currentIndex = tabs.findIndex(t => t.id === tabId);
       if (tabs.length > 1) {
         // Eğer kapatılan son tab değilse, sağdaki tab'a geç
         // Son tab ise soldaki tab'a geç
-        const newIndex =
-          currentIndex === tabs.length - 1
+        const newIndex
+          = currentIndex === tabs.length - 1
             ? currentIndex - 1
             : currentIndex + 1;
 
@@ -289,21 +295,23 @@ export const TextEditor = ({ initialFileId }: TextEditorProps) => {
     }
 
     // Tab'ı kaldır
-    setTabs((prevTabs) => prevTabs.filter((t) => t.id !== tabId));
+    setTabs(prevTabs => prevTabs.filter(t => t.id !== tabId));
   };
 
   // Dosya kaydet
   const saveFile = async (tabId: string) => {
-    const tab = tabs.find((t) => t.id === tabId);
-    if (!tab) return;
+    const tab = tabs.find(t => t.id === tabId);
+    if (!tab) {
+      return;
+    }
 
     // Dosya ID'si varsa, mevcut dosyayı güncelle
     if (tab.fileId) {
       updateFile(tab.fileId, { content: tab.content });
 
       // Tab'ı güncelle, değişikliği kaldır
-      setTabs((prevTabs) =>
-        prevTabs.map((t) => (t.id === tabId ? { ...t, isModified: false } : t))
+      setTabs(prevTabs =>
+        prevTabs.map(t => (t.id === tabId ? { ...t, isModified: false } : t)),
       );
 
       return true;
@@ -316,8 +324,10 @@ export const TextEditor = ({ initialFileId }: TextEditorProps) => {
 
   // Kaydetme işlemi için FileManager'ı aç
   const openFileManagerToSave = (tabId: string) => {
-    const tab = tabs.find((t) => t.id === tabId);
-    if (!tab) return;
+    const tab = tabs.find(t => t.id === tabId);
+    if (!tab) {
+      return;
+    }
 
     // FileManager penceresini aç
     const size = { width: 600, height: 500 };
@@ -327,25 +337,25 @@ export const TextEditor = ({ initialFileId }: TextEditorProps) => {
 
     addWindow({
       id: fileManagerId,
-      title: "Dosya Kaydet",
-      type: "file-manager",
+      title: 'Dosya Kaydet',
+      type: 'file-manager',
       position,
       size,
       isMinimized: false,
       isMaximized: false,
       zIndex: 100,
-      mode: "save",
+      mode: 'save',
       data: {
         content: tab.content,
         fileName: tab.title,
         onSave: (fileId: string, fileName: string) => {
           // Tab'ı güncelle
-          setTabs((prevTabs) =>
-            prevTabs.map((t) =>
+          setTabs(prevTabs =>
+            prevTabs.map(t =>
               t.id === tabId
                 ? { ...t, title: fileName, fileId, isModified: false }
-                : t
-            )
+                : t,
+            ),
           );
         },
       },
@@ -353,21 +363,23 @@ export const TextEditor = ({ initialFileId }: TextEditorProps) => {
   };
 
   // Aktif tab
-  const activeTab = tabs.find((tab) => tab.id === activeTabId);
+  const activeTab = tabs.find(tab => tab.id === activeTabId);
 
   // Tab header bileşeni
   const TabHeader = () => (
     <div className="flex text-sm bg-card">
-      {tabs.map((tab) => (
+      {tabs.map(tab => (
         <div
           key={tab.id}
           className={`px-4 py-2 flex items-center cursor-pointer border-r border-border ${
-            tab.id === activeTabId ? "bg-muted" : "hover:bg-muted"
+            tab.id === activeTabId ? 'bg-muted' : 'hover:bg-muted'
           }`}
           onClick={() => setActiveTabId(tab.id)}
         >
           <span className="max-w-[120px] truncate">
-            {tab.title} {tab.isModified && "•"}
+            {tab.title}
+            {' '}
+            {tab.isModified && '•'}
           </span>
           <Button
             variant="ghost"
@@ -406,7 +418,9 @@ export const TextEditor = ({ initialFileId }: TextEditorProps) => {
             size="sm"
             onClick={() => {
               setShowSaveModal(false);
-              if (tabToClose) performCloseTab(tabToClose);
+              if (tabToClose) {
+                performCloseTab(tabToClose);
+              }
               setTabToClose(null);
             }}
           >
@@ -419,7 +433,9 @@ export const TextEditor = ({ initialFileId }: TextEditorProps) => {
               setShowSaveModal(false);
               if (tabToClose) {
                 const saved = await saveFile(tabToClose);
-                if (saved) performCloseTab(tabToClose);
+                if (saved) {
+                  performCloseTab(tabToClose);
+                }
               }
               setTabToClose(null);
             }}
@@ -444,27 +460,29 @@ export const TextEditor = ({ initialFileId }: TextEditorProps) => {
   // Kısayollar
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     // Ctrl+S ile kaydet
-    if (e.ctrlKey && e.key === "s") {
+    if (e.ctrlKey && e.key === 's') {
       e.preventDefault();
-      if (activeTabId) saveFile(activeTabId);
+      if (activeTabId) {
+        saveFile(activeTabId);
+      }
     }
 
     // Tab tuşu için düzgün girinti
-    if (e.key === "Tab") {
+    if (e.key === 'Tab') {
       e.preventDefault();
       const start = e.currentTarget.selectionStart;
       const end = e.currentTarget.selectionEnd;
 
       const value = e.currentTarget.value;
-      const newValue = value.substring(0, start) + "  " + value.substring(end);
+      const newValue = `${value.substring(0, start)}  ${value.substring(end)}`;
 
       updateTabContent(newValue);
 
       // İmleci doğru konuma getir
       setTimeout(() => {
         if (editorRef.current) {
-          editorRef.current.selectionStart = editorRef.current.selectionEnd =
-            start + 2;
+          editorRef.current.selectionStart = editorRef.current.selectionEnd
+            = start + 2;
         }
       }, 0);
     }
@@ -474,20 +492,22 @@ export const TextEditor = ({ initialFileId }: TextEditorProps) => {
     <div className="h-full flex flex-col bg-background text-foreground font-mono overflow-hidden">
       <TabHeader />
 
-      {activeTab ? (
-        <textarea
-          ref={editorRef}
-          className="flex-1 w-full bg-background text-foreground p-4 resize-none outline-none font-mono min-h-0"
-          value={activeTab.content}
-          onChange={(e) => updateTabContent(e.target.value)}
-          onKeyDown={handleKeyDown}
-          spellCheck={false}
-        />
-      ) : (
-        <div className="flex-1 flex items-center justify-center text-muted-foreground">
-          <p>Tab oluşturmak için + düğmesine tıklayın</p>
-        </div>
-      )}
+      {activeTab
+        ? (
+            <textarea
+              ref={editorRef}
+              className="flex-1 w-full bg-background text-foreground p-4 resize-none outline-none font-mono min-h-0"
+              value={activeTab.content}
+              onChange={e => updateTabContent(e.target.value)}
+              onKeyDown={handleKeyDown}
+              spellCheck={false}
+            />
+          )
+        : (
+            <div className="flex-1 flex items-center justify-center text-muted-foreground">
+              <p>Tab oluşturmak için + düğmesine tıklayın</p>
+            </div>
+          )}
 
       {showSaveModal && <SaveModal />}
     </div>

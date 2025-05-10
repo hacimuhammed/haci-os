@@ -1,9 +1,9 @@
-import { useEffect, useState } from "react";
+import { Button } from '@/components/ui/button';
 
-import { Button } from "./ui/button";
-import { LogOut } from "lucide-react";
-import { ThemeSelector } from "./ThemeSelector";
-import { useUserStore } from "../store/userStore";
+import { useUserStore } from '@/store/userStore';
+import { LogOut } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { ThemeSelector } from './ThemeSelector';
 
 export const Topbar = () => {
   const [time, setTime] = useState(new Date());
@@ -20,16 +20,16 @@ export const Topbar = () => {
 
   const formatTime = () => {
     return time.toLocaleTimeString(undefined, {
-      hour: "2-digit",
-      minute: "2-digit",
+      hour: '2-digit',
+      minute: '2-digit',
     });
   };
 
   const formatDate = () => {
     return time.toLocaleDateString(undefined, {
-      weekday: "short",
-      month: "short",
-      day: "numeric",
+      weekday: 'short',
+      month: 'short',
+      day: 'numeric',
     });
   };
 

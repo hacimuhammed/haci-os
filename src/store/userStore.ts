@@ -1,9 +1,9 @@
-import { create } from "zustand";
-import { persist } from "zustand/middleware";
-import { useFileManagerStore } from "./fileManagerStore";
-import { v4 as uuidv4 } from "uuid";
+import { v4 as uuidv4 } from 'uuid';
+import { create } from 'zustand';
+import { persist } from 'zustand/middleware';
+import { useFileManagerStore } from './fileManagerStore';
 
-export interface User {
+export type User = {
   id: string;
   username: string;
   password: string; // Gerçek sistemde hashlenmiş olmalı
@@ -11,9 +11,9 @@ export interface User {
   lastLogin?: Date;
   avatar?: string;
   isAdmin?: boolean; // Admin yetkisi
-}
+};
 
-interface UserState {
+type UserState = {
   users: User[];
   currentUser: User | null;
   isAuthenticated: boolean;
@@ -30,22 +30,22 @@ interface UserState {
   initializeSystem: () => void;
   isUserAdmin: (username: string) => boolean;
   setAdminStatus: (username: string, isAdmin: boolean) => void;
-}
+};
 
 // Varsayılan kullanıcıları oluşturan fonksiyon
 const createDefaultUsers = (): User[] => {
   return [
     {
       id: uuidv4(),
-      username: "haci",
-      password: "password", // Gerçek uygulamada hash kullanın
+      username: 'haci',
+      password: 'password', // Gerçek uygulamada hash kullanın
       createdAt: new Date(),
       isAdmin: true, // haci kullanıcısına admin yetkisi verildi
     },
     {
       id: uuidv4(),
-      username: "misafir",
-      password: "guest", // Gerçek uygulamada hash kullanın
+      username: 'misafir',
+      password: 'guest', // Gerçek uygulamada hash kullanın
       createdAt: new Date(),
       isAdmin: false,
     },
@@ -54,11 +54,11 @@ const createDefaultUsers = (): User[] => {
 
 // Kullanıcının home klasörü için standart klasörler oluşturan yardımcı fonksiyon
 export const createUserHomeDirectories = (username: string) => {
-  const directories = ["Downloads", "Pictures", "Documents", "Music", "Videos"];
-  return directories.map((dir) => ({
+  const directories = ['Downloads', 'Pictures', 'Documents', 'Music', 'Videos'];
+  return directories.map(dir => ({
     id: uuidv4(),
     name: dir,
-    type: "folder" as const,
+    type: 'folder' as const,
     path: `/home/${username}`,
   }));
 };
@@ -72,15 +72,15 @@ export const useUserStore = create<UserState>()(
 
       // Kullanıcı admin mi?
       isUserAdmin: (username: string) => {
-        const user = get().users.find((u) => u.username === username);
+        const user = get().users.find(u => u.username === username);
         return user?.isAdmin === true;
       },
 
       // Kullanıcıya admin yetkisi ver/al
       setAdminStatus: (username: string, isAdmin: boolean) => {
-        set((state) => ({
-          users: state.users.map((user) =>
-            user.username === username ? { ...user, isAdmin } : user
+        set(state => ({
+          users: state.users.map(user =>
+            user.username === username ? { ...user, isAdmin } : user,
           ),
           // Eğer aktif kullanıcıysa onu da güncelle
           currentUser:
@@ -100,7 +100,7 @@ export const useUserStore = create<UserState>()(
           // Kullanıcının dizin yapısını oluştur
           if (
             !fileManagerStore.files.some(
-              (file) => file.path === "/home" && file.name === user.username
+              file => file.path === '/home' && file.name === user.username,
             )
           ) {
             fileManagerStore.initializeUserDirectory(user.username);
@@ -113,14 +113,14 @@ export const useUserStore = create<UserState>()(
         username: string,
         password: string,
         avatar?: string,
-        isAdmin: boolean = false
+        isAdmin: boolean = false,
       ) => {
         // Kullanıcı adı kontrolü
         const existingUser = get().users.find(
-          (user) => user.username === username
+          user => user.username === username,
         );
         if (existingUser) {
-          throw new Error("Username already exists");
+          throw new Error('Username already exists');
         }
 
         const newUser: User = {
@@ -132,7 +132,7 @@ export const useUserStore = create<UserState>()(
           isAdmin,
         };
 
-        set((state) => ({
+        set(state => ({
           users: [...state.users, newUser],
         }));
 
@@ -147,15 +147,15 @@ export const useUserStore = create<UserState>()(
           logout();
         }
 
-        set((state) => ({
-          users: state.users.filter((user) => user.id !== id),
+        set(state => ({
+          users: state.users.filter(user => user.id !== id),
         }));
       },
 
       // Kullanıcı girişi
       login: (username: string, password: string) => {
         const user = get().users.find(
-          (u) => u.username === username && u.password === password
+          u => u.username === username && u.password === password,
         );
 
         if (user) {
@@ -165,7 +165,7 @@ export const useUserStore = create<UserState>()(
           set({
             currentUser: updatedUser,
             isAuthenticated: true,
-            users: get().users.map((u) => (u.id === user.id ? updatedUser : u)),
+            users: get().users.map(u => (u.id === user.id ? updatedUser : u)),
           });
 
           return true;
@@ -184,9 +184,9 @@ export const useUserStore = create<UserState>()(
 
       // Kullanıcı güncelleme
       updateUser: (id: string, updates: Partial<User>) => {
-        set((state) => ({
-          users: state.users.map((user) =>
-            user.id === id ? { ...user, ...updates } : user
+        set(state => ({
+          users: state.users.map(user =>
+            user.id === id ? { ...user, ...updates } : user,
           ),
           // Eğer aktif kullanıcıysa onu da güncelle
           currentUser:
@@ -197,12 +197,12 @@ export const useUserStore = create<UserState>()(
       },
     }),
     {
-      name: "user-storage", // localStorage anahtarı
-      partialize: (state) => ({
+      name: 'user-storage', // localStorage anahtarı
+      partialize: state => ({
         users: state.users,
         currentUser: state.currentUser,
         isAuthenticated: state.isAuthenticated,
       }),
-    }
-  )
+    },
+  ),
 );

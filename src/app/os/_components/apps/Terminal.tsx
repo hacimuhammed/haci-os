@@ -1,27 +1,28 @@
+'use client';
+
+import { useFileManagerStore } from '@/store/fileManagerStore';
+import { useUserStore } from '@/store/userStore';
+
+import { useWindowManagerStore } from '@/store/windowManagerStore';
 import {
   calculateCascadingPosition,
-  calculateCenterPosition,
-} from "../../utils/window";
-import { useEffect, useRef, useState } from "react";
+} from '@/utils/window';
+import { useEffect, useRef, useState } from 'react';
+import { v4 as uuidv4 } from 'uuid';
 
-import { useFileManagerStore } from "../../store/fileManagerStore";
-import { useUserStore } from "../../store/userStore";
-import { useWindowManagerStore } from "../../store/windowManagerStore";
-import { v4 as uuidv4 } from "uuid";
-
-interface Command {
+type Command = {
   command: string;
   output: string;
   path: string;
-}
+};
 
-interface FileContent {
+type FileContent = {
   [key: string]: string;
-}
+};
 
 export const Terminal = () => {
   const [commands, setCommands] = useState<Command[]>([]);
-  const [currentCommand, setCurrentCommand] = useState("");
+  const [currentCommand, setCurrentCommand] = useState('');
   const [fileContents, setFileContents] = useState<FileContent>({});
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
@@ -29,10 +30,10 @@ export const Terminal = () => {
   const [historyIndex, setHistoryIndex] = useState(-1);
   const [selectedSuggestionIndex, setSelectedSuggestionIndex] = useState(0);
   const [sudoMode, setSudoMode] = useState(false);
-  const [sudoCommand, setSudoCommand] = useState("");
-  const [sudoPassword, setSudoPassword] = useState("");
+  const [sudoCommand, setSudoCommand] = useState('');
+  const [sudoPassword, setSudoPassword] = useState('');
   // Her terminal penceresi için kendi yerel yolunu tut
-  const [localCurrentPath, setLocalCurrentPath] = useState("/");
+  const [localCurrentPath, setLocalCurrentPath] = useState('/');
 
   const {
     files,
@@ -85,63 +86,63 @@ export const Terminal = () => {
 
   const getAvailableCommands = () => {
     return [
-      "ls",
-      "cd",
-      "pwd",
-      "touch",
-      "mkdir",
-      "clear",
-      "cat",
-      "nano",
-      "help",
-      "chmod",
-      "chown",
-      "sudo",
-      "useradd",
-      "usermod",
-      "whoami",
+      'ls',
+      'cd',
+      'pwd',
+      'touch',
+      'mkdir',
+      'clear',
+      'cat',
+      'nano',
+      'help',
+      'chmod',
+      'chown',
+      'sudo',
+      'useradd',
+      'usermod',
+      'whoami',
     ];
   };
 
   const getFilesAndDirsInCurrentPath = () => {
     // Kullanıcının erişebileceği dosyaları getir - yerel yolu kullan
     return getUserAccessibleFiles(currentUser.username, localCurrentPath).map(
-      (file) => file.name
+      file => file.name,
     );
   };
 
   const getUsernames = () => {
-    return users.map((user) => user.username);
+    return users.map(user => user.username);
   };
 
   const findSuggestions = (partialCommand: string) => {
-    const parts = partialCommand.trim().split(" ");
+    const parts = partialCommand.trim().split(' ');
     const lastWord = parts[parts.length - 1];
     const command = parts[0];
 
     if (parts.length === 1) {
       // Komut tamamlama
-      const commandSuggestions = getAvailableCommands().filter((cmd) =>
-        cmd.startsWith(lastWord)
+      const commandSuggestions = getAvailableCommands().filter(cmd =>
+        cmd.startsWith(lastWord),
       );
       return commandSuggestions;
     } else {
       // Dosya/dizin tamamlama (genel durum)
-      if (command === "chown" && parts.length === 2) {
+      if (command === 'chown' && parts.length === 2) {
         // chown için kullanıcı adları öner
-        return getUsernames().filter((username) =>
-          username.startsWith(lastWord)
+        return getUsernames().filter(username =>
+          username.startsWith(lastWord),
         );
       } else {
         // Diğer komutlar için dosya/dizin adları öner
         const filesDirs = getFilesAndDirsInCurrentPath();
-        return filesDirs.filter((item) => item.startsWith(lastWord));
+        return filesDirs.filter(item => item.startsWith(lastWord));
       }
     }
   };
 
   const applyTab = () => {
-    const parts = currentCommand.trim().split(" ");
+    const parts = currentCommand.trim().split(' ');
     const lastWord = parts[parts.length - 1];
 
     const newSuggestions = findSuggestions(currentCommand);
@@ -152,7 +153,7 @@ export const Terminal = () => {
         setCurrentCommand(newSuggestions[0]);
       } else {
         parts[parts.length - 1] = newSuggestions[0];
-        setCurrentCommand(parts.join(" "));
+        setCurrentCommand(parts.join(' '));
       }
       setShowSuggestions(false);
     } else if (newSuggestions.length > 1) {
@@ -163,7 +164,9 @@ export const Terminal = () => {
   };
 
   const navigateSuggestions = () => {
-    if (suggestions.length === 0 || !showSuggestions) return;
+    if (suggestions.length === 0 || !showSuggestions) {
+      return;
+    }
 
     // Bir sonraki öneriye git
     const nextIndex = (selectedSuggestionIndex + 1) % suggestions.length;
@@ -171,16 +174,18 @@ export const Terminal = () => {
   };
 
   const selectCurrentSuggestion = () => {
-    if (suggestions.length === 0 || !showSuggestions) return;
+    if (suggestions.length === 0 || !showSuggestions) {
+      return;
+    }
 
-    const parts = currentCommand.trim().split(" ");
+    const parts = currentCommand.trim().split(' ');
     const suggestion = suggestions[selectedSuggestionIndex];
 
     if (parts.length === 1) {
       setCurrentCommand(suggestion);
     } else {
       parts[parts.length - 1] = suggestion;
-      setCurrentCommand(parts.join(" "));
+      setCurrentCommand(parts.join(' '));
     }
 
     setShowSuggestions(false);
@@ -193,114 +198,116 @@ export const Terminal = () => {
       setCommands([
         ...commands,
         {
-          command: "sudo " + sudoCommand,
-          output: "sudo: incorrect password",
+          command: `sudo ${sudoCommand}`,
+          output: 'sudo: incorrect password',
           path: localCurrentPath,
         },
       ]);
       setSudoMode(false);
-      setSudoCommand("");
-      setSudoPassword("");
+      setSudoCommand('');
+      setSudoPassword('');
       return;
     }
 
     // Sudo komutu çalıştır
     executeCommand(sudoCommand, true);
     setSudoMode(false);
-    setSudoCommand("");
-    setSudoPassword("");
+    setSudoCommand('');
+    setSudoPassword('');
   };
 
   const executeCommand = (command: string, isSudo: boolean = false) => {
-    const [cmd, ...args] = command.trim().split(" ");
+    const [cmd, ...args] = command.trim().split(' ');
 
     // Komut geçmişine ekle
     setCommandHistory([command, ...commandHistory]);
     setHistoryIndex(-1);
 
-    let output = "";
+    let output = '';
     let newPath = localCurrentPath;
 
     // Admin yetkisi olmayan kullanıcıların yetkili işlemleri için sudo kontrolü
     const isAdmin = isSudo || isUserAdmin(currentUser.username);
 
     switch (cmd) {
-      case "ls":
+      case 'ls':
         // Kullanıcının erişebileceği dosyaları göster - yerel yolu kullan
         const accessibleFiles = getUserAccessibleFiles(
           currentUser.username,
-          localCurrentPath
+          localCurrentPath,
         );
         output = accessibleFiles
           .map((file) => {
             const permissions = [
-              file.type === "folder" ? "d" : "-",
-              hasReadPermission(file, currentUser.username) ? "r" : "-",
-              hasWritePermission(file, currentUser.username) ? "w" : "-",
-              hasExecutePermission(file, currentUser.username) ? "x" : "-",
-              "---", // Diğer kullanıcılar için izinler
-            ].join("");
+              file.type === 'folder' ? 'd' : '-',
+              hasReadPermission(file, currentUser.username) ? 'r' : '-',
+              hasWritePermission(file, currentUser.username) ? 'w' : '-',
+              hasExecutePermission(file, currentUser.username) ? 'x' : '-',
+              '---', // Diğer kullanıcılar için izinler
+            ].join('');
 
-            return `${permissions} ${file.owner || "root"} ${file.name}`;
+            return `${permissions} ${file.owner || 'root'} ${file.name}`;
           })
-          .join("\n");
+          .join('\n');
 
         if (accessibleFiles.length === 0) {
-          output = "Directory is empty";
+          output = 'Directory is empty';
         }
         break;
 
-      case "cd":
+      case 'cd':
         if (args[0]) {
-          let targetPath = args[0];
-          let nextPath = "";
+          const targetPath = args[0];
+          let nextPath = '';
 
           // Mutlak yol mu?
-          if (targetPath.startsWith("/")) {
+          if (targetPath.startsWith('/')) {
             nextPath = targetPath;
           }
           // Kısayol: ~ ile başlıyorsa kullanıcının ev dizinine git
-          else if (targetPath === "~" || targetPath.startsWith("~/")) {
+          else if (targetPath === '~' || targetPath.startsWith('~/')) {
             const homePath = `/home/${currentUser.username}`;
-            nextPath =
-              targetPath === "~"
+            nextPath
+              = targetPath === '~'
                 ? homePath
                 : `${homePath}/${targetPath.substring(2)}`;
           }
           // Özel durum: '..' ile üst dizine git
-          else if (targetPath === "..") {
-            const parentPath =
-              localCurrentPath.split("/").slice(0, -1).join("/") || "/";
+          else if (targetPath === '..') {
+            const parentPath
+              = localCurrentPath.split('/').slice(0, -1).join('/') || '/';
             nextPath = parentPath;
           }
           // Nispi yol
           else {
-            nextPath = `${localCurrentPath}/${targetPath}`.replace(/\/+/g, "/");
+            nextPath = `${localCurrentPath}/${targetPath}`.replace(/\/+/g, '/');
           }
 
           // Yol kontrolü ve normalize
-          nextPath = nextPath.replace(/\/+/g, "/");
-          if (nextPath === "") nextPath = "/";
+          nextPath = nextPath.replace(/\/+/g, '/');
+          if (nextPath === '') {
+            nextPath = '/';
+          }
 
           // Hedef yolun varlığını kontrol et
           // Önce "/" ile başlayan yol bileşenlerini ayır
-          const pathParts = nextPath.split("/").filter((part) => part !== "");
-          let currentPathCheck = "/";
+          const pathParts = nextPath.split('/').filter(part => part !== '');
+          let currentPathCheck = '/';
           let targetExists = true;
           let permissionExists = true;
 
           // Yolu adım adım kontrol et
           for (let i = 0; i < pathParts.length; i++) {
             const part = pathParts[i];
-            const nextPath =
-              currentPathCheck === "/"
+            const nextPath
+              = currentPathCheck === '/'
                 ? `/${part}`
                 : `${currentPathCheck}/${part}`;
 
             // Özel durum: /home dizini ve /home/username kontrolleri
             if (
-              nextPath === "/home" ||
-              nextPath === `/home/${currentUser.username}`
+              nextPath === '/home'
+              || nextPath === `/home/${currentUser.username}`
             ) {
               // /home ve /home/username her zaman var kabul edilir
               currentPathCheck = nextPath;
@@ -309,13 +316,17 @@ export const Terminal = () => {
 
             // Dosya sisteminde var mı?
             const pathExists = files.some((f) => {
-              if (i === 0 && part === "home") return true; // /home her zaman var
-              if (nextPath === `/home/${currentUser.username}`) return true; // kullanıcı home'u her zaman var
+              if (i === 0 && part === 'home') {
+                return true;
+              } // /home her zaman var
+              if (nextPath === `/home/${currentUser.username}`) {
+                return true;
+              } // kullanıcı home'u her zaman var
 
               return (
-                f.path === currentPathCheck &&
-                f.name === part &&
-                f.type === "folder"
+                f.path === currentPathCheck
+                && f.name === part
+                && f.type === 'folder'
               );
             });
 
@@ -326,19 +337,19 @@ export const Terminal = () => {
 
             // Erişim izni var mı?
             if (
-              nextPath !== "/home" &&
-              nextPath !== `/home/${currentUser.username}`
+              nextPath !== '/home'
+              && nextPath !== `/home/${currentUser.username}`
             ) {
               const folder = files.find(
-                (f) =>
-                  f.path === currentPathCheck &&
-                  f.name === part &&
-                  f.type === "folder"
+                f =>
+                  f.path === currentPathCheck
+                  && f.name === part
+                  && f.type === 'folder',
               );
 
               if (
-                folder &&
-                !hasExecutePermission(folder, currentUser.username)
+                folder
+                && !hasExecutePermission(folder, currentUser.username)
               ) {
                 permissionExists = false;
                 break;
@@ -367,32 +378,32 @@ export const Terminal = () => {
         }
         break;
 
-      case "pwd":
+      case 'pwd':
         output = localCurrentPath; // Global yerine local state'i kullan
         break;
 
-      case "touch":
+      case 'touch':
         if (args[0]) {
           // Şu anki dizine yazma izni kontrolü - yerel yolu kullan
           const currentDir = files.find(
-            (f) =>
-              f.path === localCurrentPath.split("/").slice(0, -1).join("/") &&
-              f.name === localCurrentPath.split("/").pop()
+            f =>
+              f.path === localCurrentPath.split('/').slice(0, -1).join('/')
+              && f.name === localCurrentPath.split('/').pop(),
           );
 
           if (
-            currentDir &&
-            !hasWritePermission(currentDir, currentUser.username)
+            currentDir
+            && !hasWritePermission(currentDir, currentUser.username)
           ) {
             output = `touch: cannot create file '${args[0]}': Permission denied`;
             break;
           }
 
           const fileExists = files.some(
-            (f) =>
-              f.path === localCurrentPath &&
-              f.name === args[0] &&
-              f.type === "file"
+            f =>
+              f.path === localCurrentPath
+              && f.name === args[0]
+              && f.type === 'file',
           );
 
           if (fileExists) {
@@ -401,9 +412,9 @@ export const Terminal = () => {
             const newFile = {
               id: uuidv4(),
               name: args[0],
-              type: "file" as const,
+              type: 'file' as const,
               path: localCurrentPath,
-              content: "",
+              content: '',
               owner: currentUser.username,
               permissions: {
                 read: [currentUser.username],
@@ -415,32 +426,32 @@ export const Terminal = () => {
             output = `Created file ${args[0]}`;
           }
         } else {
-          output = "touch: missing file operand";
+          output = 'touch: missing file operand';
         }
         break;
 
-      case "mkdir":
+      case 'mkdir':
         if (args[0]) {
           // Şu anki dizine yazma izni kontrolü - yerel yolu kullan
           const currentDir = files.find(
-            (f) =>
-              f.path === localCurrentPath.split("/").slice(0, -1).join("/") &&
-              f.name === localCurrentPath.split("/").pop()
+            f =>
+              f.path === localCurrentPath.split('/').slice(0, -1).join('/')
+              && f.name === localCurrentPath.split('/').pop(),
           );
 
           if (
-            currentDir &&
-            !hasWritePermission(currentDir, currentUser.username)
+            currentDir
+            && !hasWritePermission(currentDir, currentUser.username)
           ) {
             output = `mkdir: cannot create directory '${args[0]}': Permission denied`;
             break;
           }
 
           const folderExists = files.some(
-            (f) =>
-              f.path === localCurrentPath &&
-              f.name === args[0] &&
-              f.type === "folder"
+            f =>
+              f.path === localCurrentPath
+              && f.name === args[0]
+              && f.type === 'folder',
           );
 
           if (folderExists) {
@@ -449,7 +460,7 @@ export const Terminal = () => {
             const newFolder = {
               id: uuidv4(),
               name: args[0],
-              type: "folder" as const,
+              type: 'folder' as const,
               path: localCurrentPath,
               owner: currentUser.username,
               permissions: {
@@ -462,17 +473,17 @@ export const Terminal = () => {
             output = `Created directory ${args[0]}`;
           }
         } else {
-          output = "mkdir: missing operand";
+          output = 'mkdir: missing operand';
         }
         break;
 
-      case "cat":
+      case 'cat':
         if (args[0]) {
           const file = files.find(
-            (f) =>
-              f.path === localCurrentPath &&
-              f.name === args[0] &&
-              f.type === "file"
+            f =>
+              f.path === localCurrentPath
+              && f.name === args[0]
+              && f.type === 'file',
           );
 
           if (!file) {
@@ -480,35 +491,35 @@ export const Terminal = () => {
           } else if (!hasReadPermission(file, currentUser.username)) {
             output = `cat: ${args[0]}: Permission denied`;
           } else {
-            output = file.content || "(empty file)";
+            output = file.content || '(empty file)';
           }
         } else {
-          output = "cat: missing file operand";
+          output = 'cat: missing file operand';
         }
         break;
 
-      case "nano":
+      case 'nano':
         if (args[0]) {
           handleOpenFile(args[0]);
         } else {
-          output = "nano: missing file operand";
+          output = 'nano: missing file operand';
         }
         return;
 
-      case "chmod":
+      case 'chmod':
         if (args.length < 2) {
-          output =
-            "chmod: missing operand\nTry 'chmod [+/-][r/w/x] [target] [user]'";
+          output
+            = 'chmod: missing operand\nTry \'chmod [+/-][r/w/x] [target] [user]\'';
           break;
         }
 
         const modeStr = args[0];
         const targetFile = args[1];
-        const targetUser = args[2] || "*"; // Kullanıcı belirtilmezse herkes için işlem yap
+        const targetUser = args[2] || '*'; // Kullanıcı belirtilmezse herkes için işlem yap
 
         // İzin değişikliği yapılacak dosyayı bul - yerel yolu kullan
         const fileToChange = files.find(
-          (f) => f.path === localCurrentPath && f.name === targetFile
+          f => f.path === localCurrentPath && f.name === targetFile,
         );
 
         if (!fileToChange) {
@@ -535,8 +546,8 @@ export const Terminal = () => {
         const permission = modeStr.slice(1); // r, w, x
 
         if (
-          !["+", "-"].includes(operation) ||
-          !["r", "w", "x"].includes(permission)
+          !['+', '-'].includes(operation)
+          || !['r', 'w', 'x'].includes(permission)
         ) {
           output = `chmod: invalid mode: '${modeStr}'`;
           break;
@@ -544,8 +555,8 @@ export const Terminal = () => {
 
         let permissionsUpdated = false;
 
-        if (permission === "r") {
-          if (operation === "+") {
+        if (permission === 'r') {
+          if (operation === '+') {
             // İzin ekle
             if (!fileToChange.permissions.read.includes(targetUser)) {
               fileToChange.permissions.read.push(targetUser);
@@ -553,35 +564,35 @@ export const Terminal = () => {
             }
           } else {
             // İzin kaldır
-            fileToChange.permissions.read =
-              fileToChange.permissions.read.filter(
-                (user) => user !== targetUser
+            fileToChange.permissions.read
+              = fileToChange.permissions.read.filter(
+                user => user !== targetUser,
               );
             permissionsUpdated = true;
           }
-        } else if (permission === "w") {
-          if (operation === "+") {
+        } else if (permission === 'w') {
+          if (operation === '+') {
             if (!fileToChange.permissions.write.includes(targetUser)) {
               fileToChange.permissions.write.push(targetUser);
               permissionsUpdated = true;
             }
           } else {
-            fileToChange.permissions.write =
-              fileToChange.permissions.write.filter(
-                (user) => user !== targetUser
+            fileToChange.permissions.write
+              = fileToChange.permissions.write.filter(
+                user => user !== targetUser,
               );
             permissionsUpdated = true;
           }
-        } else if (permission === "x") {
-          if (operation === "+") {
+        } else if (permission === 'x') {
+          if (operation === '+') {
             if (!fileToChange.permissions.execute.includes(targetUser)) {
               fileToChange.permissions.execute.push(targetUser);
               permissionsUpdated = true;
             }
           } else {
-            fileToChange.permissions.execute =
-              fileToChange.permissions.execute.filter(
-                (user) => user !== targetUser
+            fileToChange.permissions.execute
+              = fileToChange.permissions.execute.filter(
+                user => user !== targetUser,
               );
             permissionsUpdated = true;
           }
@@ -593,16 +604,16 @@ export const Terminal = () => {
             permissions: fileToChange.permissions,
           });
           output = `Changed permissions of '${targetFile}' for user '${
-            targetUser === "*" ? "all users" : targetUser
+            targetUser === '*' ? 'all users' : targetUser
           }'`;
         } else {
           output = `Permissions already set for '${targetFile}'`;
         }
         break;
 
-      case "chown":
+      case 'chown':
         if (args.length < 2) {
-          output = "chown: missing operand\nTry 'chown user file'";
+          output = 'chown: missing operand\nTry \'chown user file\'';
           break;
         }
 
@@ -610,7 +621,7 @@ export const Terminal = () => {
         const targetFileName = args[1];
 
         // Kullanıcı var mı kontrol et
-        const userExists = users.some((user) => user.username === newOwner);
+        const userExists = users.some(user => user.username === newOwner);
         if (!userExists) {
           output = `chown: invalid user: '${newOwner}'`;
           break;
@@ -618,7 +629,7 @@ export const Terminal = () => {
 
         // Hedef dosyayı bul - yerel yolu kullan
         const fileToChangeOwner = files.find(
-          (f) => f.path === localCurrentPath && f.name === targetFileName
+          f => f.path === localCurrentPath && f.name === targetFileName,
         );
 
         if (!fileToChangeOwner) {
@@ -635,11 +646,11 @@ export const Terminal = () => {
         // Sahipliği değiştir
         updateFile(fileToChangeOwner.id, { owner: newOwner });
         output = `Changed owner of '${targetFileName}' from '${
-          fileToChangeOwner.owner || "root"
+          fileToChangeOwner.owner || 'root'
         }' to '${newOwner}'`;
         break;
 
-      case "help":
+      case 'help':
         output = `Available commands:
   ls - List directory contents
   cd - Change directory
@@ -658,91 +669,91 @@ whoami - Print current user
  help - Display this help`;
         break;
 
-      case "clear":
+      case 'clear':
         setCommands([]);
         return;
 
-      case "sudo":
+      case 'sudo':
         if (args.length === 0) {
-          output = "sudo: a command is required";
+          output = 'sudo: a command is required';
           break;
         }
 
         // Zaten admin ise direkt çalıştır
         if (isUserAdmin(currentUser.username)) {
-          executeCommand(args.join(" "), true);
+          executeCommand(args.join(' '), true);
           return;
         }
 
         // Sudo moduna geç ve şifre iste
         setSudoMode(true);
-        setSudoCommand(args.join(" "));
+        setSudoCommand(args.join(' '));
         return;
 
-      case "useradd":
+      case 'useradd':
         if (!isAdmin) {
-          output = "useradd: Permission denied";
+          output = 'useradd: Permission denied';
           break;
         }
 
         if (args.length < 2) {
-          output =
-            "useradd: missing username and password\nTry 'useradd username password'";
+          output
+            = 'useradd: missing username and password\nTry \'useradd username password\'';
           break;
         }
 
         const newUsername = args[0];
         const newPassword = args[1];
-        const makeAdmin = args.includes("--admin");
+        const makeAdmin = args.includes('--admin');
 
         try {
           // Yeni kullanıcı oluştur
           addUserToSystem(newUsername, newPassword, undefined, makeAdmin);
           output = `User '${newUsername}' created successfully${
-            makeAdmin ? " with admin privileges" : ""
+            makeAdmin ? ' with admin privileges' : ''
           }`;
         } catch (error: any) {
           output = `useradd: ${error.message}`;
         }
         break;
 
-      case "usermod":
+      case 'usermod':
         if (!isAdmin) {
-          output = "usermod: Permission denied";
+          output = 'usermod: Permission denied';
           break;
         }
 
         if (args.length < 2) {
-          output =
-            "usermod: missing option and username\nTry 'usermod --admin username'";
+          output
+            = 'usermod: missing option and username\nTry \'usermod --admin username\'';
           break;
         }
 
         const modOption = args[0];
         const modUsername = args[1];
 
-        if (modOption !== "--admin" && modOption !== "--remove-admin") {
+        if (modOption !== '--admin' && modOption !== '--remove-admin') {
           output = `usermod: invalid option '${modOption}'`;
           break;
         }
 
-        const modTargetUser = users.find((u) => u.username === modUsername);
+        const modTargetUser = users.find(u => u.username === modUsername);
         if (!modTargetUser) {
           output = `usermod: user '${modUsername}' does not exist`;
           break;
         }
 
         // Admin yetkisi ekle veya kaldır
-        setAdminStatus(modUsername, modOption === "--admin");
+        setAdminStatus(modUsername, modOption === '--admin');
         output = `User '${modUsername}' ${
-          modOption === "--admin" ? "granted" : "removed"
+          modOption === '--admin' ? 'granted' : 'removed'
         } admin privileges`;
         break;
 
-      case "whoami":
+      case 'whoami':
         output = currentUser.username;
         if (isUserAdmin(currentUser.username)) {
-          output += " (admin)";
+          output += ' (admin)';
         }
         break;
 
@@ -760,38 +771,38 @@ whoami - Print current user
       },
     ]);
 
-    setCurrentCommand("");
+    setCurrentCommand('');
     setShowSuggestions(false);
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     // Sudo modundayken şifre girişi
     if (sudoMode) {
-      if (e.key === "Enter") {
+      if (e.key === 'Enter') {
         executeSudoCommand(sudoPassword);
       }
       return;
     }
 
-    if (e.key === "Enter") {
+    if (e.key === 'Enter') {
       if (showSuggestions) {
         selectCurrentSuggestion();
       } else {
         executeCommand(currentCommand);
       }
-    } else if (e.key === "Tab") {
+    } else if (e.key === 'Tab') {
       e.preventDefault();
       if (showSuggestions) {
         navigateSuggestions();
       } else {
         applyTab();
       }
-    } else if (e.key === "ArrowUp") {
+    } else if (e.key === 'ArrowUp') {
       e.preventDefault();
       if (showSuggestions) {
         // Öneriler gösteriliyorsa, önceki öneriye git
-        const prevIndex =
-          selectedSuggestionIndex > 0
+        const prevIndex
+          = selectedSuggestionIndex > 0
             ? selectedSuggestionIndex - 1
             : suggestions.length - 1;
         setSelectedSuggestionIndex(prevIndex);
@@ -803,7 +814,7 @@ whoami - Print current user
           setHistoryIndex(nextIndex);
         }
       }
-    } else if (e.key === "ArrowDown") {
+    } else if (e.key === 'ArrowDown') {
       e.preventDefault();
       if (showSuggestions) {
         // Öneriler gösteriliyorsa, sonraki öneriye git
@@ -815,22 +826,22 @@ whoami - Print current user
         if (prevIndex >= 0) {
           setCurrentCommand(commandHistory[prevIndex]);
         } else {
-          setCurrentCommand("");
+          setCurrentCommand('');
         }
         setHistoryIndex(prevIndex);
       }
-    } else if (e.key === "Escape") {
+    } else if (e.key === 'Escape') {
       setShowSuggestions(false);
     }
   };
 
   const selectSuggestion = (suggestion: string, index: number) => {
-    const parts = currentCommand.trim().split(" ");
+    const parts = currentCommand.trim().split(' ');
     if (parts.length === 1) {
       setCurrentCommand(suggestion);
     } else {
       parts[parts.length - 1] = suggestion;
-      setCurrentCommand(parts.join(" "));
+      setCurrentCommand(parts.join(' '));
     }
     setShowSuggestions(false);
     inputRef.current?.focus();
@@ -839,8 +850,8 @@ whoami - Print current user
   const handleOpenFile = (fileName: string) => {
     // Önce dosyayı bul - yerel yolu kullan
     const file = files.find(
-      (f) =>
-        f.path === localCurrentPath && f.name === fileName && f.type === "file"
+      f =>
+        f.path === localCurrentPath && f.name === fileName && f.type === 'file',
     );
 
     if (!file) {
@@ -873,7 +884,7 @@ whoami - Print current user
     addWindow({
       id: uuidv4(),
       title: `Nano - ${fileName}`,
-      type: "nano",
+      type: 'nano',
       position,
       size,
       isMinimized: false,
@@ -892,7 +903,7 @@ whoami - Print current user
 
     if (path.startsWith(homePath)) {
       // /home/username dizinini ~ ile değiştir
-      displayPath = path.replace(homePath, "~");
+      displayPath = path.replace(homePath, '~');
     }
 
     return (
@@ -900,7 +911,7 @@ whoami - Print current user
         <span className="text-green-400">{currentUser.username}</span>
         <span className="text-white">:</span>
         <span className="text-blue-400">{displayPath}</span>
-        <span>{isAdmin ? "# " : "$ "}</span>
+        <span>{isAdmin ? '# ' : '$ '}</span>
       </span>
     );
   };
@@ -916,17 +927,17 @@ whoami - Print current user
               <span className="text-blue-400">
                 {(() => {
                   const homePath = `/home/${currentUser.username}`;
-                  let displayPath = cmd.path || "/";
+                  let displayPath = cmd.path || '/';
 
                   // Home dizinini ~ ile göster
                   if (displayPath.startsWith(homePath)) {
-                    displayPath = displayPath.replace(homePath, "~");
+                    displayPath = displayPath.replace(homePath, '~');
                   }
 
                   return displayPath;
                 })()}
               </span>
-              {isUserAdmin(currentUser.username) ? "# " : "$ "}
+              {isUserAdmin(currentUser.username) ? '# ' : '$ '}
             </span>
             <span className="ml-2">{cmd.command}</span>
           </div>
@@ -936,50 +947,52 @@ whoami - Print current user
         </div>
       ))}
       <div className="flex relative">
-        {sudoMode ? (
-          <>
-            <span className="text-[#f7768e]">
-              <span className="text-green-400">{currentUser.username}</span>
-              <span className="text-white">:</span>
-              <span className="text-blue-400">
-                {(() => {
-                  const homePath = `/home/${currentUser.username}`;
-                  let displayPath = localCurrentPath;
-                  if (displayPath.startsWith(homePath)) {
-                    displayPath = displayPath.replace(homePath, "~");
-                  }
-                  return displayPath;
-                })()}
-              </span>
-              {"# "}
-            </span>
-            <input
-              type="password"
-              value={sudoPassword}
-              onChange={(e) => setSudoPassword(e.target.value)}
-              onKeyDown={handleKeyDown}
-              placeholder="[sudo] password for current user:"
-              className="bg-transparent border-none outline-none ml-2 flex-1 text-[#a9b1d6]"
-              autoFocus
-            />
-          </>
-        ) : (
-          <>
-            {renderPrompt()}
-            <input
-              ref={inputRef}
-              type="text"
-              value={currentCommand}
-              onChange={(e) => {
-                setCurrentCommand(e.target.value);
-                setShowSuggestions(false);
-              }}
-              onKeyDown={handleKeyDown}
-              className="bg-transparent border-none outline-none ml-2 flex-1 text-[#a9b1d6]"
-              spellCheck={false}
-            />
-          </>
-        )}
+        {sudoMode
+          ? (
+              <>
+                <span className="text-[#f7768e]">
+                  <span className="text-green-400">{currentUser.username}</span>
+                  <span className="text-white">:</span>
+                  <span className="text-blue-400">
+                    {(() => {
+                      const homePath = `/home/${currentUser.username}`;
+                      let displayPath = localCurrentPath;
+                      if (displayPath.startsWith(homePath)) {
+                        displayPath = displayPath.replace(homePath, '~');
+                      }
+                      return displayPath;
+                    })()}
+                  </span>
+                  {'# '}
+                </span>
+                <input
+                  type="password"
+                  value={sudoPassword}
+                  onChange={e => setSudoPassword(e.target.value)}
+                  onKeyDown={handleKeyDown}
+                  placeholder="[sudo] password for current user:"
+                  className="bg-transparent border-none outline-none ml-2 flex-1 text-[#a9b1d6]"
+                  autoFocus
+                />
+              </>
+            )
+          : (
+              <>
+                {renderPrompt()}
+                <input
+                  ref={inputRef}
+                  type="text"
+                  value={currentCommand}
+                  onChange={(e) => {
+                    setCurrentCommand(e.target.value);
+                    setShowSuggestions(false);
+                  }}
+                  onKeyDown={handleKeyDown}
+                  className="bg-transparent border-none outline-none ml-2 flex-1 text-[#a9b1d6]"
+                  spellCheck={false}
+                />
+              </>
+            )}
 
         {showSuggestions && suggestions.length > 0 && !sudoMode && (
           <div className="absolute left-0 top-full mt-1 bg-[#24283b] border border-[#414868] rounded-md overflow-hidden shadow-lg z-10">
@@ -988,8 +1001,8 @@ whoami - Print current user
                 key={idx}
                 className={`px-3 py-1 cursor-pointer ${
                   idx === selectedSuggestionIndex
-                    ? "bg-[#414868] text-white"
-                    : "hover:bg-[#414868]"
+                    ? 'bg-[#414868] text-white'
+                    : 'hover:bg-[#414868]'
                 }`}
                 onClick={() => selectSuggestion(suggestion, idx)}
               >

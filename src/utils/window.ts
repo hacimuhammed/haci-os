@@ -1,5 +1,5 @@
 export const calculateCenterPosition = (width: number, height: number) => {
-  if (typeof window === "undefined") {
+  if (typeof window === 'undefined') {
     return { x: 100, y: 100 }; // Varsayılan değer
   }
 
@@ -20,7 +20,7 @@ export const calculateCenterPosition = (width: number, height: number) => {
 let lastWindowPosition = { x: 50, y: 50 }; // Başlangıç pozisyonu
 
 export const calculateCascadingPosition = (width: number, height: number) => {
-  if (typeof window === "undefined") {
+  if (typeof window === 'undefined') {
     return { x: 100, y: 100 }; // Varsayılan değer
   }
 

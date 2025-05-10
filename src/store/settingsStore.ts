@@ -1,56 +1,56 @@
-import { create } from "zustand";
-import { persist } from "zustand/middleware";
+import { create } from 'zustand';
+import { persist } from 'zustand/middleware';
 
-interface AppearanceSettings {
+type AppearanceSettings = {
   wallpaperPath: string;
-}
+};
 
-interface SystemSettings {
+type SystemSettings = {
   language: string;
-  timeFormat: "12h" | "24h";
-}
+  timeFormat: '12h' | '24h';
+};
 
 export type WindowAnimationType =
-  | "fade"
-  | "scale"
-  | "slide"
-  | "flip"
-  | "rotate"
-  | "jellyfish"
-  | "none";
+  | 'fade'
+  | 'scale'
+  | 'slide'
+  | 'flip'
+  | 'rotate'
+  | 'jellyfish'
+  | 'none';
 
-interface TweaksSettings {
+type TweaksSettings = {
   iconPack: string;
   windowAnimation: WindowAnimationType;
-}
+};
 
-interface SettingsState {
+type SettingsState = {
   appearance: AppearanceSettings;
   system: SystemSettings;
   tweaks: TweaksSettings;
   setWallpaper: (path: string) => void;
   setLanguage: (language: string) => void;
-  setTimeFormat: (format: "12h" | "24h") => void;
+  setTimeFormat: (format: '12h' | '24h') => void;
   setIconPack: (iconPack: string) => void;
   setWindowAnimation: (animation: WindowAnimationType) => void;
-}
+};
 
 export const useSettingsStore = create<SettingsState>()(
   persist(
-    (set) => ({
+    set => ({
       appearance: {
-        wallpaperPath: "/wallpapers/Plucky_Puffin.webp",
+        wallpaperPath: '/wallpapers/Plucky_Puffin.webp',
       },
       system: {
-        language: "en",
-        timeFormat: "24h",
+        language: 'en',
+        timeFormat: '24h',
       },
       tweaks: {
-        iconPack: "whitesur-light",
-        windowAnimation: "rotate",
+        iconPack: 'whitesur-light',
+        windowAnimation: 'rotate',
       },
       setWallpaper: (path) => {
-        set((state) => ({
+        set(state => ({
           ...state,
           appearance: {
             ...state.appearance,
@@ -59,7 +59,7 @@ export const useSettingsStore = create<SettingsState>()(
         }));
       },
       setLanguage: (language) => {
-        set((state) => ({
+        set(state => ({
           ...state,
           system: {
             ...state.system,
@@ -68,7 +68,7 @@ export const useSettingsStore = create<SettingsState>()(
         }));
       },
       setTimeFormat: (format) => {
-        set((state) => ({
+        set(state => ({
           ...state,
           system: {
             ...state.system,
@@ -77,7 +77,7 @@ export const useSettingsStore = create<SettingsState>()(
         }));
       },
       setIconPack: (iconPack) => {
-        set((state) => ({
+        set(state => ({
           ...state,
           tweaks: {
             ...state.tweaks,
@@ -87,7 +87,7 @@ export const useSettingsStore = create<SettingsState>()(
       },
       setWindowAnimation: (windowAnimation) => {
         console.log(windowAnimation);
-        set((state) => ({
+        set(state => ({
           ...state,
           tweaks: {
             ...state.tweaks,
@@ -97,7 +97,7 @@ export const useSettingsStore = create<SettingsState>()(
       },
     }),
     {
-      name: "gnome-settings",
-    }
-  )
+      name: 'gnome-settings',
+    },
+  ),
 );

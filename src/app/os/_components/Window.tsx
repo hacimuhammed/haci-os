@@ -1,11 +1,11 @@
-import { AnimatePresence, motion } from "framer-motion";
-import { useEffect, useRef, useState } from "react";
+import { Button } from '@/components/ui/button';
+import { useSettingsStore } from '@/store/settingsStore';
 
-import { Button } from "./ui/button";
-import { useSettingsStore } from "../store/settingsStore";
-import { useWindowManagerStore } from "../store/windowManagerStore";
+import { useWindowManagerStore } from '@/store/windowManagerStore';
+import { AnimatePresence, motion } from 'framer-motion';
+import { useEffect, useRef, useState } from 'react';
 
-interface WindowProps {
+type WindowProps = {
   id: string;
   title: string;
   children: React.ReactNode;
@@ -13,7 +13,7 @@ interface WindowProps {
   initialSize?: { width: number; height: number };
   headerLeft?: React.ReactNode;
   content?: React.ReactNode;
-}
+};
 
 // Farklı animasyon türleri için varyantlar
 const animationVariants = {
@@ -54,7 +54,7 @@ const animationVariants = {
       scale: 1,
       transition: {
         duration: 0.4,
-        type: "spring",
+        type: 'spring',
         stiffness: 300,
         damping: 15,
       },
@@ -65,7 +65,7 @@ const animationVariants = {
       y: 10,
       transition: {
         duration: 0.3,
-        ease: "easeInOut",
+        ease: 'easeInOut',
       },
     },
     transition: { duration: 0.4 },
@@ -120,7 +120,7 @@ export const Window = ({
     mouseY: 0,
     width: 0,
     height: 0,
-    cursorType: "",
+    cursorType: '',
     initialX: 0,
     initialY: 0,
   });
@@ -129,7 +129,7 @@ export const Window = ({
   const animationFrameId = useRef<number | null>(null);
 
   // Şu anki pencerenin zIndex'ini al
-  const currentWindow = windows.find((w) => w.id === id);
+  const currentWindow = windows.find(w => w.id === id);
   const zIndex = currentWindow?.zIndex || 1;
 
   // Pencere pozisyonunu ekran sınırları içinde tutma
@@ -152,7 +152,7 @@ export const Window = ({
   // Pencere aktifleştirme ve öne getirme işlemi - sadece window header veya kenarlarında
   const handleWindowActivation = (e: React.MouseEvent) => {
     // İçerik alanına tıklamayı ignore et, böylece içerik alanı normal şekilde çalışır
-    const contentArea = e.currentTarget.querySelector(".window-content");
+    const contentArea = e.currentTarget.querySelector('.window-content');
     if (contentArea?.contains(e.target as Node)) {
       return;
     }
@@ -165,7 +165,9 @@ export const Window = ({
   // Component mount/unmount event listeners
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
-      if (!isDragging.current && !isResizing.current) return;
+      if (!isDragging.current && !isResizing.current) {
+        return;
+      }
 
       e.preventDefault(); // Metin seçimini önle
 
@@ -185,7 +187,7 @@ export const Window = ({
 
           const { x: clampedX, y: clampedY } = clampPositionToScreen(
             newX,
-            newY
+            newY,
           );
           setPosition({ x: clampedX, y: clampedY });
 
@@ -209,38 +211,38 @@ export const Window = ({
           let newY = resizeStartInfo.current.initialY;
 
           // Resize tipine göre boyutları ve pozisyonu ayarla
-          if (cursorType === "se-resize") {
+          if (cursorType === 'se-resize') {
             // Sağ alt köşe (orijinal davranış)
             newWidth = Math.max(400, resizeStartInfo.current.width + deltaX);
             newHeight = Math.max(300, resizeStartInfo.current.height + deltaY);
-          } else if (cursorType === "sw-resize") {
+          } else if (cursorType === 'sw-resize') {
             // Sol alt köşe
             newWidth = Math.max(400, resizeStartInfo.current.width - deltaX);
             newHeight = Math.max(300, resizeStartInfo.current.height + deltaY);
-            newX =
-              resizeStartInfo.current.initialX +
-              resizeStartInfo.current.width -
-              newWidth;
-          } else if (cursorType === "ne-resize") {
+            newX
+              = resizeStartInfo.current.initialX
+                + resizeStartInfo.current.width
+                - newWidth;
+          } else if (cursorType === 'ne-resize') {
             // Sağ üst köşe
             newWidth = Math.max(400, resizeStartInfo.current.width + deltaX);
             newHeight = Math.max(300, resizeStartInfo.current.height - deltaY);
-            newY =
-              resizeStartInfo.current.initialY +
-              resizeStartInfo.current.height -
-              newHeight;
-          } else if (cursorType === "nw-resize") {
+            newY
+              = resizeStartInfo.current.initialY
+                + resizeStartInfo.current.height
+                - newHeight;
+          } else if (cursorType === 'nw-resize') {
             // Sol üst köşe
             newWidth = Math.max(400, resizeStartInfo.current.width - deltaX);
             newHeight = Math.max(300, resizeStartInfo.current.height - deltaY);
-            newX =
-              resizeStartInfo.current.initialX +
-              resizeStartInfo.current.width -
-              newWidth;
-            newY =
-              resizeStartInfo.current.initialY +
-              resizeStartInfo.current.height -
-              newHeight;
+            newX
+              = resizeStartInfo.current.initialX
+                + resizeStartInfo.current.width
+                - newWidth;
+            newY
+              = resizeStartInfo.current.initialY
+                + resizeStartInfo.current.height
+                - newHeight;
           }
 
           // Ekran dışına taşmayı engelle
@@ -259,19 +261,21 @@ export const Window = ({
     };
 
     const handleMouseUp = (e: MouseEvent) => {
-      if (!isDragging.current && !isResizing.current) return;
+      if (!isDragging.current && !isResizing.current) {
+        return;
+      }
 
       e.preventDefault();
 
       if (isDragging.current) {
         isDragging.current = false;
-        document.body.style.cursor = "";
+        document.body.style.cursor = '';
 
         // Pencere pozisyonunu store'a kaydet
         updateWindow(id, { position });
       } else if (isResizing.current) {
         isResizing.current = false;
-        document.body.style.cursor = "";
+        document.body.style.cursor = '';
 
         // Pencere boyutunu store'a kaydet
         updateWindow(id, { size });
@@ -285,15 +289,15 @@ export const Window = ({
       }
     };
 
-    window.addEventListener("mousemove", handleMouseMove);
-    window.addEventListener("mouseup", handleMouseUp);
-    window.addEventListener("resize", handleResize);
+    window.addEventListener('mousemove', handleMouseMove);
+    window.addEventListener('mouseup', handleMouseUp);
+    window.addEventListener('resize', handleResize);
 
     // Cleanup
     return () => {
-      window.removeEventListener("mousemove", handleMouseMove);
-      window.removeEventListener("mouseup", handleMouseUp);
-      window.removeEventListener("resize", handleResize);
+      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('mouseup', handleMouseUp);
+      window.removeEventListener('resize', handleResize);
 
       if (animationFrameId.current !== null) {
         cancelAnimationFrame(animationFrameId.current);
@@ -324,7 +328,9 @@ export const Window = ({
     }
 
     // Sağ tıklama veya orta tuş tıklaması ile sürüklemeyi engelle
-    if (e.button !== 0) return;
+    if (e.button !== 0) {
+      return;
+    }
 
     e.preventDefault();
     e.stopPropagation();
@@ -345,7 +351,7 @@ export const Window = ({
     };
 
     // Sürükleme işareti
-    document.body.style.cursor = "move";
+    document.body.style.cursor = 'move';
   };
 
   // Handle resize start
@@ -358,13 +364,13 @@ export const Window = ({
 
     // Tıklanan köşeye göre resize türünü belirle
     const target = e.currentTarget;
-    const cursorType = target.className.includes("resize-se")
-      ? "se-resize"
-      : target.className.includes("resize-sw")
-      ? "sw-resize"
-      : target.className.includes("resize-ne")
-      ? "ne-resize"
-      : "nw-resize";
+    const cursorType = target.className.includes('resize-se')
+      ? 'se-resize'
+      : target.className.includes('resize-sw')
+        ? 'sw-resize'
+        : target.className.includes('resize-ne')
+          ? 'ne-resize'
+          : 'nw-resize';
 
     // Boyutlandırma durumunu kaydet
     isResizing.current = true;
@@ -410,18 +416,18 @@ export const Window = ({
         key={id}
         ref={windowRef}
         style={{
-          position: "absolute",
+          position: 'absolute',
           width: size.width,
           height: size.height,
           left: position.x,
           top: position.y,
-          transformOrigin: "top center",
-          zIndex: zIndex,
+          transformOrigin: 'top center',
+          zIndex,
         }}
         className={`rounded-lg overflow-hidden flex flex-col border-none ${
           activeWindowId === id
-            ? "shadow-[0_5px_30px_rgba(0,0,0,0.8)]"
-            : "shadow-sm"
+            ? 'shadow-[0_5px_30px_rgba(0,0,0,0.8)]'
+            : 'shadow-sm'
         } bg-card text-card-foreground`}
         onClick={handleWindowActivation}
         // Animation properties
@@ -441,7 +447,7 @@ export const Window = ({
         <div
           ref={headerRef}
           onMouseDown={handleDragStart}
-          className={`p-2 flex items-center justify-between cursor-move bg-card text-card-foreground select-none`}
+          className="p-2 flex items-center justify-between cursor-move bg-card text-card-foreground select-none"
         >
           <div className="flex items-center">{headerLeft}</div>
           <div className="mx-2 flex-1 text-center truncate font-medium">
